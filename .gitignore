@@ -1,0 +1,31 @@
+# Build results
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VS Code
+.vscode/
+
+# Rider / JetBrains
+.idea/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Publish output
+publish/
+
+# Node (if ever used later)
+node_modules/
+
+# Secrets
+secrets.json
+appsettings.*.json.user
