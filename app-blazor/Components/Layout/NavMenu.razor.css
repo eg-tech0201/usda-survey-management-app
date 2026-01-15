@@ -103,3 +103,10 @@
         overflow-y: auto;
     }
 }
+
+.nav-section-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    opacity: 0.85;
+    padding: 0.5rem 0;
+}

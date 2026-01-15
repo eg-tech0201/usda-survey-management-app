@@ -1,6 +1,6 @@
 ﻿<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">app-blazor</a>
+        <a class="navbar-brand" href="">SMS Lite</a>
     </div>
 </div>
 
@@ -9,22 +9,39 @@
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
         <div class="nav-item px-3">
+            <div class="nav-section-title">SMS Lite (Navigation)</div>
+        </div>
+
+        <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                <span class="bi bi-speedometer2" aria-hidden="true"></span> Dashboard (Home)
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+            <NavLink class="nav-link" href="surveys">
+                <span class="bi bi-card-list" aria-hidden="true"></span> Surveys
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
+            <NavLink class="nav-link" href="calendar">
+                <span class="bi bi-calendar3" aria-hidden="true"></span> Calendar
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="tasks">
+                <span class="bi bi-check2-square" aria-hidden="true"></span> Tasks
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="administration">
+                <span class="bi bi-gear" aria-hidden="true"></span> Administration
             </NavLink>
         </div>
     </nav>
 </div>
+
 
