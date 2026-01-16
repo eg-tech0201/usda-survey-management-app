@@ -1,0 +1,89 @@
+.page-h2 {
+    margin-bottom: 1rem;
+}
+
+.panel {
+    border-radius: 16px;
+    background: var(--brand-bg);
+}
+
+.panel-title {
+    font-weight: 900;
+    margin-bottom: 0.75rem;
+    color: var(--brand-navy);
+}
+
+.table-scroll {
+    overflow: auto;
+    /* lets you keep lots of columns */
+    border-radius: 14px;
+}
+
+.table-lite {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+    background: var(--brand-bg);
+}
+
+.table-lite th,
+.table-lite td {
+    border-top: 1px solid var(--brand-border);
+    padding: 0.65rem 0.55rem;
+    vertical-align: top;
+    white-space: nowrap;
+}
+
+.table-lite thead th {
+    border-top: none;
+    color: var(--brand-muted);
+    font-weight: 800;
+    background: color-mix(in srgb, var(--brand-surface) 60%, transparent);
+    position: sticky;
+    top: 0;
+    /* sticky header while horizontal scrolling */
+    z-index: 2;
+}
+
+.cell-strong {
+    font-weight: 800;
+    color: var(--brand-navy);
+    white-space: normal;
+    /* allow title to wrap */
+    min-width: 260px;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem 0.65rem;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    line-height: 1;
+    min-width: 104px;
+    text-align: center;
+    border: 1px solid transparent;
+}
+
+/* uses your :root status tokens */
+.pill-progress {
+    background: color-mix(in srgb, var(--status-progress) 18%, white);
+    color: var(--status-progress);
+}
+
+.pill-blocked {
+    background: color-mix(in srgb, var(--status-blocked) 22%, white);
+    color: #7a5200;
+}
+
+.pill-notstarted {
+    background: color-mix(in srgb, var(--status-notstarted) 22%, white);
+    color: var(--brand-muted);
+}
+
+.pill-overdue {
+    background: color-mix(in srgb, var(--status-overdue) 18%, white);
+    color: var(--status-overdue);
+}

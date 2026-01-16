@@ -1,8 +1,32 @@
-html, body {
+:root {
+    /* USDA-inspired core */
+    --brand-navy: #0b2b4b;
+    --brand-green: #1f6f3f;
+    --brand-green-2: #2a8a4a;
+
+    /* UI neutrals */
+    --brand-bg: #ffffff;
+    --brand-surface: #f8f9fa;
+    --brand-border: rgba(0, 0, 0, 0.08);
+    --brand-muted: #6c757d;
+
+    /* Status colors */
+    --status-progress: #1f6f3f;
+    --status-blocked: #f0ad4e;
+    --status-overdue: #dc3545;
+    --status-notstarted: #adb5bd;
+
+    --usda-border-grad: linear-gradient(180deg, var(--brand-green) 0%, var(--brand-navy) 100%);
+    --panel-bg: #ffffff;
+}
+
+html,
+body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-a, .btn-link {
+a,
+.btn-link {
     color: #006bb7;
 }
 
@@ -12,8 +36,12 @@ a, .btn-link {
     border-color: #1861ac;
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
 .content {
@@ -42,9 +70,9 @@ h1:focus {
     color: white;
 }
 
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
-    }
+.blazor-error-boundary::after {
+    content: "An error has occurred."
+}
 
 .darker-border-checkbox.form-check-input {
     border-color: #929292;

@@ -29,6 +29,12 @@
 
 <div class="grid-2">
     <section class="panel">
+        <div class="panel-title">Upcoming Schedule / Calendar View</div>
+
+        <TaskCalendar Events="CalendarEvents" @bind-View="CalendarView" />
+    </section>
+
+    <section class="panel">
         <div class="panel-title">My Tasks</div>
         <table class="table-lite">
             <thead>
@@ -45,41 +51,47 @@
                     <tr>
                         <td>@t.Task</td>
                         <td>@t.Survey</td>
-                        <td>@t.DueDate.ToString("MMM d")</td>
+                        <td>@t.DueAt.ToString("MMM d, h:mm tt")</td>
                         <td><span class="pill @GetPill(t.Status)">@t.Status</span></td>
                     </tr>
                 }
             </tbody>
         </table>
     </section>
-
-    <section class="panel">
-        <div class="panel-title">Upcoming Schedule / Calendar View</div>
-
-        <TaskCalendar Events="CalendarEvents" @bind-View="CalendarView" />
-    </section>
 </div>
 
 @code {
     private TaskCalendar.CalendarViewMode CalendarView = TaskCalendar.CalendarViewMode.Month;
 
-    private record TaskRow(string Task, string Survey, DateTime DueDate, string Status);
+    // DueAt includes the time
+    private record TaskRow(string Task, string Survey, DateTime DueAt, string Status);
 
     private List<TaskRow> Tasks = new()
     {
-        new("Finalize survey iteration dates", "1001 Crop Yield", new DateTime(2026, 1, 26), "In progress"),
-        new("Validate status master (pre-publish)", "1002 Ag Census Pilot", new DateTime(2026, 1, 18), "Blocked"),
-        new("Review questionnaire link (instrument)", "1001 Crop Yield", new DateTime(2026, 1, 22), "Not started"),
-        new("Resolve schedule conflict (overlap)", "1004 Dairy Inventory", new DateTime(2026, 1, 17), "Overdue"),
-        new("Confirm CAWI mode dates", "1003 Farm Labor Study", new DateTime(2026, 1, 11), "In progress"),
+        new("Finalize survey iteration dates", "1001 Crop Yield", 
+            new DateTime(2026, 1, 26, 17, 0, 0), 
+            "In progress"), // 5:00PM
+        new("Validate status master (pre-publish)", "1002 Ag Census Pilot", 
+            new DateTime(2026, 1, 18, 10, 0, 0), 
+            "Blocked"), //10:00 AM
+        new("Review questionnaire link (instrument)", "1001 Crop Yield", 
+            new DateTime(2026, 1, 22, 14, 30, 0), 
+            "Not started"), // 2:30 PM
+        new("Resolve schedule conflict (overlap)", "1004 Dairy Inventory", 
+            new DateTime(2026, 1, 17, 9, 0, 0), 
+            "Overdue"), //9:00 AM
+        new("Confirm CAWI mode dates", "1003 Farm Labor Study", 
+            new DateTime(2026, 1, 11, 16, 0, 0), 
+            "In progress"), // 4:00 PM
     };
 
     private List<TaskCalendar.CalendarEvent> CalendarEvents =>
-        Tasks.Select(t => new TaskCalendar.CalendarEvent
-        {
-            Date = t.DueDate,
-            Title = $"{t.Survey} — {t.Task}"
-        }).ToList();
+    Tasks.Select(t => new TaskCalendar.CalendarEvent
+    {
+        Start = t.DueAt, // <-- IMPORTANT (CalendarEvent should have Start)
+        Title = $"{t.Survey} — {t.Task}",
+        Status = t.Status
+    }).ToList();
 
     private string GetPill(string status) => status switch
     {

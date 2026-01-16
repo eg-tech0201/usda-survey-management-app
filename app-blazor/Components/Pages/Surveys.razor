@@ -1,3 +1,79 @@
 @page "/surveys"
-<h3>Surveys</h3>
-<p>Placeholder surveys list (table goes here).</p>
+
+<h2 class="page-h2">Surveys</h2>
+
+<div class="panel usda-border">
+    <div class="panel-title">Survey List</div>
+
+    <div class="table-scroll">
+        <table class="table-lite">
+            <thead>
+                <tr>
+                    <th style="width: 90px;">ID</th>
+                    <th style="min-width: 260px;">Survey Title</th>
+                    <th style="width: 140px;">Survey Date</th>
+                    <th style="width: 130px;">OMB Number</th>
+                    <th style="width: 140px;">OMB Expires</th>
+                    <th style="min-width: 220px;">Sample Name</th>
+                    <th style="width: 120px;">Start Date</th>
+                    <th style="width: 120px;">Stop Date</th>
+                    <th style="width: 120px;">Status</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var s in Survey)
+                {
+                    <tr>
+                        <td>@s.Id</td>
+                        <td class="cell-strong">@s.Title</td>
+                        <td>@s.SurveyDate.ToString("yyyy-MM-dd")</td>
+                        <td>@s.OmbNumber</td>
+                        <td>@s.OmbExpires.ToString("yyyy-MM-dd")</td>
+                        <td>@s.SampleName</td>
+                        <td>@s.StartDate.ToString("yyyy-MM-dd")</td>
+                        <td>@s.StopDate.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            <span class="status-pill @GetPill(s.Status)">@s.Status</span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    private record SurveyRow(
+        int Id,
+        DateTime SurveyDate,
+        string Title,
+        string OmbNumber,
+        DateTime OmbExpires,
+        string SampleName,
+        DateTime StartDate,
+        DateTime StopDate,
+        string Status
+    );
+
+    private List<SurveyRow> Survey = new()
+    {
+        new(312, new DateTime(2025, 11, 01), "PLACEMENT OF PULLET CHICKS FOR HATCHERY SUPPLY FLOCKS", "0535-0004", new DateTime(2027, 11, 30), "316-PULLET PLACEMENTS", new DateTime(2025, 11, 01), new DateTime(2025, 12, 15), "In progress"),
+        new(1001, new DateTime(2026, 01, 05), "Crop Yield Survey (CY-2026)", "0535-0123", new DateTime(2028, 06, 30), "CY-2026 Core Sample", new DateTime(2026, 01, 05), new DateTime(2026, 03, 31), "Not started"),
+        new(1002, new DateTime(2026, 01, 08), "Agricultural Census Pilot (ACP)", "0535-0456", new DateTime(2027, 09, 30), "ACP Pilot Frame", new DateTime(2026, 01, 10), new DateTime(2026, 02, 28), "Blocked"),
+        new(1003, new DateTime(2026, 01, 11), "Farm Labor Study (FLS)", "0535-0789", new DateTime(2029, 01, 31), "FLS 2026 Sample", new DateTime(2026, 01, 15), new DateTime(2026, 04, 15), "In progress"),
+        new(1004, new DateTime(2026, 01, 15), "Dairy Inventory Survey (DIS)", "0535-0321", new DateTime(2027, 12, 31), "DIS Monthly Frame", new DateTime(2026, 01, 01), new DateTime(2026, 01, 31), "Overdue"),
+        new(1107, new DateTime(2026, 02, 01), "Producer Price Index (PPI) Follow-up", "0535-0555", new DateTime(2028, 03, 31), "PPI Follow-up List", new DateTime(2026, 02, 01), new DateTime(2026, 02, 20), "Not started"),
+        new(1209, new DateTime(2026, 02, 10), "Irrigation & Water Use (IWU)", "0535-0666", new DateTime(2028, 10, 31), "IWU Stratified Sample", new DateTime(2026, 02, 12), new DateTime(2026, 05, 01), "In progress"),
+        new(1302, new DateTime(2026, 03, 01), "Organic Production Survey (OPS)", "0535-0777", new DateTime(2029, 05, 31), "OPS Recontact Frame", new DateTime(2026, 03, 01), new DateTime(2026, 06, 15), "Not started"),
+    };
+
+    private string GetPill(string status) => status switch
+    {
+        "In progress" => "pill-progress",
+        "Blocked" => "pill-blocked",
+        "Not started" => "pill-notstarted",
+        "Overdue" => "pill-overdue",
+        _ => ""
+    };
+}

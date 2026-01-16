@@ -1,5 +1,6 @@
 .page-h2 {
     margin-bottom: 1rem;
+    color: var(--brand-navy);
 }
 
 .stats-grid {
@@ -10,41 +11,52 @@
 }
 
 .stat-tile {
-    border: 1px solid rgba(0,0,0,0.12);
     border-radius: 14px;
     padding: 0.9rem;
-    background: #fff;
     min-height: 92px;
+    border: 1px solid transparent;
+    background:
+        linear-gradient(var(--panel-bg), var(--panel-bg)) padding-box,
+        linear-gradient(180deg, rgba(31, 111, 63, 0.55), rgba(11, 43, 75, 0.35)) border-box;
 }
 
 .stat-label {
     font-size: 0.85rem;
-    opacity: 0.8;
+    color: var(--brand-muted);
     margin-bottom: 0.35rem;
     line-height: 1.2;
 }
 
 .stat-value {
     font-size: 1.35rem;
-    font-weight: 800;
+    font-weight: 900;
+    color: var(--brand-navy);
 }
 
 .grid-2 {
     display: grid;
-    grid-template-columns: 1.2fr 1fr;
+    grid-template-columns: 1.6fr 1fr;
     gap: 1rem;
 }
 
 .panel {
-    border: 1px solid rgba(0,0,0,0.12);
     border-radius: 14px;
-    background: #fff;
     padding: 0.9rem;
+
+    /* “gradient border frame” */
+    border: 1px solid transparent;
+    background:
+        linear-gradient(var(--panel-bg), var(--panel-bg)) padding-box,
+        var(--usda-border-grad) border-box;
+
+    /* subtle glow */
+    box-shadow: 0 6px 22px rgba(11, 43, 75, 0.08);
 }
 
 .panel-title {
-    font-weight: 800;
+    font-weight: 900;
     margin-bottom: 0.75rem;
+    color: var(--brand-navy);
 }
 
 .table-lite {
@@ -53,31 +65,58 @@
     font-size: 0.92rem;
 }
 
-.table-lite th, .table-lite td {
-    border-top: 1px solid rgba(0,0,0,0.10);
+.table-lite th,
+.table-lite td {
+    border-top: 1px solid var(--brand-border);
     padding: 0.65rem 0.5rem;
     vertical-align: top;
 }
 
 .table-lite thead th {
     border-top: none;
-    opacity: 0.85;
-    font-weight: 700;
+    color: var(--brand-muted);
+    font-weight: 800;
 }
 
-.pill {
-    display: inline-block;
-    padding: 0.2rem 0.55rem;
-    border-radius: 999px;
+/* Status pill (less round + centered) */
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0.3rem 0.65rem;
+    border-radius: 8px;
+    /* less round */
+    line-height: 1;
+    /* keeps text vertically centered */
     font-size: 0.8rem;
-    border: 1px solid rgba(0,0,0,0.12);
-    background: rgba(0,0,0,0.03);
+    font-weight: 800;
+
+    border: 1px solid var(--brand-border);
+    white-space: nowrap;
+    min-width: 92px;
+    text-align: center;
 }
 
-.pill-progress { background: rgba(0, 123, 255, 0.12); }
-.pill-blocked  { background: rgba(220, 53, 69, 0.12); }
-.pill-notstarted { background: rgba(108, 117, 125, 0.12); }
-.pill-overdue  { background: rgba(255, 193, 7, 0.18); }
+.pill-progress {
+    background: color-mix(in srgb, var(--status-progress) 18%, transparent);
+    color: var(--status-progress);
+}
+
+.pill-blocked {
+    background: color-mix(in srgb, var(--status-blocked) 22%, transparent);
+    color: #7a5200;
+}
+
+.pill-notstarted {
+    background: color-mix(in srgb, var(--status-notstarted) 22%, transparent);
+    color: var(--brand-muted);
+}
+
+.pill-overdue {
+    background: color-mix(in srgb, var(--status-overdue) 18%, transparent);
+    color: var(--status-overdue);
+}
 
 @media (max-width: 1100px) {
     .stats-grid {

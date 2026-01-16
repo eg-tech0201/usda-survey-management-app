@@ -1,3 +1,31 @@
 @page "/calendar"
-<h3>Calendar</h3>
-<p>Placeholder calendar view (annual/monthly/weekly toggles go here).</p>
+@using app_blazor.Components.Shared
+
+<h2 class="page-h2">Calendar</h2>
+
+<div class="panel usda-border">
+    <div class="panel-title">Upcoming Schedule / Calendar View</div>
+
+    <TaskCalendar Events="@CalendarEvents" />
+</div>
+
+@code {
+    private record TaskRow(string Task, string Survey, DateTime DueDate, string Status);
+
+    private List<TaskRow> Tasks = new() // dummy data just for display purposes
+    {
+        new("Finalize survey iteration dates", "1001 Crop Yield", new DateTime(2026, 1, 26, 17, 0, 0), "In progress"),
+        new("Validate status master (pre-publish)", "1002 Ag Census Pilot", new DateTime(2026, 1, 18, 10, 0, 0), "Blocked"),
+        new("Review questionnaire link (instrument)", "1001 Crop Yield", new DateTime(2026, 1, 22, 14, 30, 0), "Not started"),
+        new("Resolve schedule conflict (overlap)", "1004 Dairy Inventory", new DateTime(2026, 1, 17, 9, 0, 0), "Overdue"),
+        new("Confirm CAWI mode dates", "1003 Farm Labor Study", new DateTime(2026, 1, 11, 16, 0, 0), "In progress"),
+    };
+
+    private List<TaskCalendar.CalendarEvent> CalendarEvents =>
+        Tasks.Select(t => new TaskCalendar.CalendarEvent
+        {
+            Start = t.DueDate,
+            Title = $"{t.Survey} — {t.Task}",
+            Status = t.Status
+        }).ToList();
+}

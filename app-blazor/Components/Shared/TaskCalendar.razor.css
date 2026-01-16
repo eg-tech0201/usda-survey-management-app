@@ -3,49 +3,59 @@
     gap: 0.75rem;
 }
 
+/* ===== Toolbar: left / centered title / right ===== */
 .cal-toolbar {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
+    gap: 0.75rem;
 }
 
-.cal-left {
+.cal-left,
+.cal-right {
     display: flex;
     align-items: center;
     gap: 0.5rem;
 }
 
+.cal-center {
+    display: flex;
+    justify-content: center;
+    min-width: 0;
+}
+
 .cal-title {
-    font-weight: 800;
-    margin-left: 0.5rem;
+    font-weight: 900;
+    font-size: 1.05rem;
+    text-align: center;
+    color: var(--brand-navy);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .cal-btn {
-    border: 1px solid rgba(0,0,0,0.15);
-    background: #fff;
-    border-radius: 10px;
-    padding: 0.35rem 0.6rem;
-}
-
-.cal-right {
-    display: flex;
-    gap: 0.4rem;
+    border: 1px solid var(--brand-border);
+    background: var(--brand-bg);
+    border-radius: 12px;
+    padding: 0.45rem 0.7rem;
+    color: var(--brand-navy);
 }
 
 .cal-toggle {
-    border: 1px solid rgba(0,0,0,0.15);
-    background: #fff;
-    border-radius: 10px;
-    padding: 0.35rem 0.75rem;
-    font-weight: 700;
+    border: 1px solid var(--brand-border);
+    background: var(--brand-bg);
+    border-radius: 12px;
+    padding: 0.45rem 0.9rem;
+    font-weight: 800;
+    color: var(--brand-navy);
 }
 
 .cal-toggle.active {
-    background: rgba(0,0,0,0.06);
+    background: color-mix(in srgb, var(--brand-navy) 7%, transparent);
 }
 
+/* ===== Month ===== */
 .cal-grid {
     display: grid;
     gap: 0.35rem;
@@ -55,23 +65,19 @@
     grid-template-columns: repeat(7, 1fr);
 }
 
-.cal-week {
-    grid-template-columns: repeat(7, 1fr);
-}
-
 .cal-head {
     font-size: 0.8rem;
     font-weight: 800;
-    opacity: 0.75;
+    color: var(--brand-muted);
     padding: 0.25rem 0.35rem;
 }
 
 .cal-cell {
-    border: 1px solid rgba(0,0,0,0.10);
+    border: 1px solid var(--brand-border);
     border-radius: 12px;
     min-height: 92px;
     padding: 0.45rem;
-    background: #fff;
+    background: var(--brand-bg);
     overflow: hidden;
 }
 
@@ -80,29 +86,192 @@
 }
 
 .cal-cell.today {
-    outline: 2px solid rgba(13,110,253,0.35);
+    outline: 2px solid color-mix(in srgb, var(--brand-green) 35%, transparent);
 }
 
 .cal-daynum {
     font-weight: 900;
     font-size: 0.85rem;
     margin-bottom: 0.25rem;
+    color: var(--brand-navy);
 }
 
 .cal-ev {
     font-size: 0.78rem;
     padding: 0.18rem 0.35rem;
-    border-radius: 8px;
-    border: 1px solid rgba(0,0,0,0.10);
-    background: rgba(0,0,0,0.03);
+    border-radius: 10px;
+    border: 1px solid var(--brand-border);
     margin-top: 0.25rem;
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
 }
 
-.cal-more {
-    font-size: 0.75rem;
-    opacity: 0.75;
-    margin-top: 0.35rem;
+/* status colors (month chips) */
+.cal-ev.ev-progress {
+    background: color-mix(in srgb, var(--status-progress) 18%, transparent);
+    color: var(--status-progress);
+}
+
+.cal-ev.ev-blocked {
+    background: color-mix(in srgb, var(--status-blocked) 22%, transparent);
+    color: #7a5200;
+}
+
+.cal-ev.ev-notstarted {
+    background: color-mix(in srgb, var(--status-notstarted) 22%, transparent);
+    color: var(--brand-muted);
+}
+
+.cal-ev.ev-overdue {
+    background: color-mix(in srgb, var(--status-overdue) 18%, transparent);
+    color: var(--status-overdue);
+}
+
+/* ===== Day time grid ===== */
+.timegrid {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.timegrid-header {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.timegrid-title {
+    font-weight: 900;
+    color: var(--brand-navy);
+}
+
+.timegrid-row {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 0.5rem;
+    align-items: start;
+}
+
+.timegrid-time {
+    color: var(--brand-muted);
+    font-size: 0.85rem;
+    padding-top: 0.35rem;
+}
+
+.timegrid-slot {
+    border: 1px solid var(--brand-border);
+    border-radius: 12px;
+    min-height: 34px;
+    padding: 0.35rem;
+    background: var(--brand-bg);
+}
+
+.time-ev {
+    border-radius: 12px;
+    padding: 0.35rem 0.5rem;
+    margin-bottom: 0.35rem;
+    border: 1px solid var(--brand-border);
+}
+
+.time-ev-title {
+    font-size: 0.82rem;
+    font-weight: 900;
+}
+
+.time-ev-sub {
+    font-size: 0.72rem;
+    color: var(--brand-muted);
+}
+
+/* status colors (day/week items) */
+.ev-progress {
+    background: color-mix(in srgb, var(--status-progress) 18%, transparent);
+}
+
+.ev-blocked {
+    background: color-mix(in srgb, var(--status-blocked) 22%, transparent);
+}
+
+.ev-notstarted {
+    background: color-mix(in srgb, var(--status-notstarted) 22%, transparent);
+}
+
+.ev-overdue {
+    background: color-mix(in srgb, var(--status-overdue) 18%, transparent);
+}
+
+/* ===== Week grid (tighter columns) ===== */
+.weekgrid {
+    overflow: auto;
+    border: 1px solid var(--brand-border);
+    border-radius: 14px;
+    background: var(--brand-bg);
+}
+
+.weekgrid-header,
+.weekgrid-row {
+    display: grid;
+    grid-template-columns: 70px repeat(7, minmax(110px, 1fr));
+}
+
+.weekgrid-header {
+    position: sticky;
+    top: 0;
+    background: var(--brand-bg);
+    z-index: 2;
+    border-bottom: 1px solid var(--brand-border);
+}
+
+.weekgrid-corner {
+    height: 44px;
+}
+
+.weekgrid-day {
+    padding: 0.65rem 0.45rem;
+    font-weight: 900;
+    font-size: 0.82rem;
+    border-left: 1px solid var(--brand-border);
+    white-space: nowrap;
+    color: var(--brand-navy);
+}
+
+.weekgrid-row {
+    border-top: 1px solid var(--brand-border);
+}
+
+.weekgrid-time {
+    padding: 0.35rem 0.35rem;
+    font-size: 0.8rem;
+    color: var(--brand-muted);
+}
+
+.weekgrid-cell {
+    min-height: 40px;
+    padding: 0.25rem;
+    border-left: 1px solid var(--brand-border);
+}
+
+/* smaller, cleaner weekly chips */
+.week-ev {
+    border-radius: 10px;
+    padding: 0.25rem 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 900;
+    border: 1px solid var(--brand-border);
+    margin-bottom: 0.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 900px) {
+    .cal-toolbar {
+        grid-template-columns: 1fr;
+        justify-items: start;
+    }
+
+    .cal-center {
+        justify-content: start;
+    }
 }
