@@ -1,0 +1,56 @@
+<header class="sms-topbar">
+    <div class="sms-topbar-left">
+        <button type="button" class="hamburger" title="Toggle menu" @onclick="ToggleNav">
+            <span class="bi bi-list" aria-hidden="true"></span>
+        </button>
+
+        <span class="page-title">@Title</span>
+    </div>
+
+    <div class="sms-topbar-center">
+        <input class="search" placeholder="Search bar (SURVEY ID / NAME)" />
+    </div>
+
+    <div class="sms-topbar-right">
+        <button type="button" class="icon-btn" title="Notifications" @onclick="ToggleNotifs">
+            <span class="bi bi-bell" aria-hidden="true"></span>
+            @if (NotifCount > 0)
+            {
+                <span class="badge">@NotifCount</span>
+            }
+        </button>
+
+        <span class="email">user@usda.gov</span>
+        <span class="avatar" title="User">
+            <span class="bi bi-person-circle" aria-hidden="true"></span>
+        </span>
+    </div>
+</header>
+
+@if (ShowNotifs)
+{
+    <div class="notif-dropdown">
+        <div class="notif-header">Notifications</div>
+        <ul>
+            <li><strong>101</strong> — 6 overdue tasks</li>
+            <li><strong>102</strong> — 1 schedule conflict</li>
+            <li><strong>103</strong> — Survey 1002 missing mode dates</li>
+        </ul>
+    </div>
+}
+
+@code {
+    [Parameter] public string Title { get; set; } = "Dashboard (Home)";
+    [Parameter] public EventCallback OnToggleNav { get; set; }
+
+    private bool ShowNotifs;
+    private int NotifCount => 3;
+
+    private void ToggleNotifs() => ShowNotifs = !ShowNotifs;
+
+    private async Task ToggleNav()
+    {
+        if (OnToggleNav.HasDelegate)
+            await OnToggleNav.InvokeAsync();
+    }
+}

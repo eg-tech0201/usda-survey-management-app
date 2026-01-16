@@ -1,0 +1,106 @@
+.sms-topbar {
+    display: grid;
+    grid-template-columns: 1.2fr 2fr 1.2fr;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    background: #ffffff;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.sms-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.hamburger {
+    border: 1px solid rgba(0,0,0,0.15);
+    background: white;
+    border-radius: 10px;
+    padding: 0.35rem 0.6rem;
+    cursor: pointer;
+}
+
+.page-title {
+    font-weight: 700;
+}
+
+.sms-topbar-center .search {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.15);
+}
+
+.sms-topbar-right {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.icon-btn {
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.15);
+    background: white;
+    border-radius: 10px;
+    padding: 0.35rem 0.6rem;
+    cursor: pointer;
+}
+
+.badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #d00;
+    color: white;
+    font-size: 0.75rem;
+    padding: 0 6px;
+    border-radius: 999px;
+}
+
+.email {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.avatar {
+    font-size: 1.1rem;
+}
+
+.notif-dropdown {
+    position: fixed;
+    right: 1rem;
+    top: 3.75rem;
+    width: 340px;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    z-index: 20;
+    padding: 0.75rem;
+}
+
+.notif-header {
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.notif-dropdown ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.notif-dropdown li {
+    padding: 0.5rem 0;
+    border-top: 1px solid rgba(0,0,0,0.08);
+}
+
+.notif-dropdown li:first-child {
+    border-top: none;
+}

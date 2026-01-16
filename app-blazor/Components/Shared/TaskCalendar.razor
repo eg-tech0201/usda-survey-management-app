@@ -1,0 +1,179 @@
+@using System.Globalization
+
+<div class="cal-wrap">
+    <div class="cal-toolbar">
+        <div class="cal-left">
+            <button class="cal-btn" @onclick="Prev">‹</button>
+            <button class="cal-btn" @onclick="GoToday">Today</button>
+            <button class="cal-btn" @onclick="Next">›</button>
+
+            <div class="cal-title">
+                @GetTitle()
+            </div>
+        </div>
+
+        <div class="cal-right">
+            <button class="cal-toggle @(View == CalendarViewMode.Week ? "active" : "")"
+                    @onclick="() => SetView(CalendarViewMode.Week)">
+                Weekly
+            </button>
+            <button class="cal-toggle @(View == CalendarViewMode.Month ? "active" : "")"
+                    @onclick="() => SetView(CalendarViewMode.Month)">
+                Monthly
+            </button>
+        </div>
+    </div>
+
+    @if (View == CalendarViewMode.Month)
+    {
+        <div class="cal-grid cal-month">
+            @foreach (var d in DayHeaders)
+            {
+                <div class="cal-head">@d</div>
+            }
+
+            @foreach (var cell in GetMonthCells())
+            {
+                <div class="cal-cell @(cell.IsCurrentMonth ? "" : "muted") @(cell.IsToday ? "today" : "")">
+                    <div class="cal-daynum">@cell.Date.Day</div>
+
+                    @foreach (var ev in GetEventsForDate(cell.Date).Take(3))
+                    {
+                        <div class="cal-ev">@ev.Title</div>
+                    }
+
+                    @{
+                        var extra = GetEventsForDate(cell.Date).Count - 3;
+                        if (extra > 0)
+                        {
+                            <div class="cal-more">+@extra more</div>
+                        }
+                    }
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="cal-grid cal-week">
+            @foreach (var d in DayHeaders)
+            {
+                <div class="cal-head">@d</div>
+            }
+
+            @foreach (var day in GetWeekDays())
+            {
+                <div class="cal-cell @(day.Date == DateTime.Today.Date ? "today" : "")">
+                    <div class="cal-daynum">@day.Day</div>
+
+                    @foreach (var ev in GetEventsForDate(day).Take(6))
+                    {
+                        <div class="cal-ev">@ev.Title</div>
+                    }
+
+                    @{
+                        var extra = GetEventsForDate(day).Count - 6;
+                        if (extra > 0)
+                        {
+                            <div class="cal-more">+@extra more</div>
+                        }
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    public enum CalendarViewMode { Week, Month }
+
+    [Parameter] public List<CalendarEvent> Events { get; set; } = new();
+    [Parameter] public CalendarViewMode View { get; set; } = CalendarViewMode.Month;
+    [Parameter] public EventCallback<CalendarViewMode> ViewChanged { get; set; }
+
+    private DateTime AnchorDate { get; set; } = DateTime.Today;
+
+    private readonly string[] DayHeaders = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+
+    public class CalendarEvent
+    {
+        public DateTime Date { get; set; }
+        public string Title { get; set; } = "";
+    }
+
+    private async Task SetView(CalendarViewMode mode)
+    {
+        View = mode;
+        if (ViewChanged.HasDelegate)
+            await ViewChanged.InvokeAsync(mode);
+    }
+
+    private void GoToday() => AnchorDate = DateTime.Today;
+
+    private void Prev()
+    {
+        AnchorDate = View == CalendarViewMode.Month
+            ? AnchorDate.AddMonths(-1)
+            : AnchorDate.AddDays(-7);
+    }
+
+    private void Next()
+    {
+        AnchorDate = View == CalendarViewMode.Month
+            ? AnchorDate.AddMonths(1)
+            : AnchorDate.AddDays(7);
+    }
+
+    private string GetTitle()
+    {
+        if (View == CalendarViewMode.Month)
+            return AnchorDate.ToString("MMMM yyyy", CultureInfo.InvariantCulture);
+
+        var start = GetWeekStart(AnchorDate);
+        var end = start.AddDays(6);
+        return $"{start:MMM d} – {end:MMM d, yyyy}";
+    }
+
+    private List<CalendarEvent> GetEventsForDate(DateTime date) =>
+        Events
+            .Where(e => e.Date.Date == date.Date)
+            .OrderBy(e => e.Title)
+            .ToList();
+
+    private DateTime GetWeekStart(DateTime date)
+    {
+        // Monday-based week
+        var diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;
+        return date.Date.AddDays(-diff);
+    }
+
+    private IEnumerable<DateTime> GetWeekDays()
+    {
+        var start = GetWeekStart(AnchorDate);
+        for (int i = 0; i < 7; i++)
+            yield return start.AddDays(i);
+    }
+
+    private IEnumerable<MonthCell> GetMonthCells()
+    {
+        var firstOfMonth = new DateTime(AnchorDate.Year, AnchorDate.Month, 1);
+        var start = GetWeekStart(firstOfMonth); // start grid on Monday
+        for (int i = 0; i < 42; i++) // 6 weeks
+        {
+            var day = start.AddDays(i);
+            yield return new MonthCell
+            {
+                Date = day,
+                IsCurrentMonth = day.Month == AnchorDate.Month,
+                IsToday = day.Date == DateTime.Today.Date
+            };
+        }
+    }
+
+    private class MonthCell
+    {
+        public DateTime Date { get; set; }
+        public bool IsCurrentMonth { get; set; }
+        public bool IsToday { get; set; }
+    }
+}

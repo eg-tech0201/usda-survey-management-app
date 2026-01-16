@@ -1,0 +1,108 @@
+.cal-wrap {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.cal-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.cal-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cal-title {
+    font-weight: 800;
+    margin-left: 0.5rem;
+}
+
+.cal-btn {
+    border: 1px solid rgba(0,0,0,0.15);
+    background: #fff;
+    border-radius: 10px;
+    padding: 0.35rem 0.6rem;
+}
+
+.cal-right {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.cal-toggle {
+    border: 1px solid rgba(0,0,0,0.15);
+    background: #fff;
+    border-radius: 10px;
+    padding: 0.35rem 0.75rem;
+    font-weight: 700;
+}
+
+.cal-toggle.active {
+    background: rgba(0,0,0,0.06);
+}
+
+.cal-grid {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.cal-month {
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.cal-week {
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.cal-head {
+    font-size: 0.8rem;
+    font-weight: 800;
+    opacity: 0.75;
+    padding: 0.25rem 0.35rem;
+}
+
+.cal-cell {
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 12px;
+    min-height: 92px;
+    padding: 0.45rem;
+    background: #fff;
+    overflow: hidden;
+}
+
+.cal-cell.muted {
+    opacity: 0.55;
+}
+
+.cal-cell.today {
+    outline: 2px solid rgba(13,110,253,0.35);
+}
+
+.cal-daynum {
+    font-weight: 900;
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+}
+
+.cal-ev {
+    font-size: 0.78rem;
+    padding: 0.18rem 0.35rem;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.10);
+    background: rgba(0,0,0,0.03);
+    margin-top: 0.25rem;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.cal-more {
+    font-size: 0.75rem;
+    opacity: 0.75;
+    margin-top: 0.35rem;
+}

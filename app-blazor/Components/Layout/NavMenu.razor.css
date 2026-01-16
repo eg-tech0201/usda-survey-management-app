@@ -104,9 +104,45 @@
     }
 }
 
+/* Make section title readable on dark sidebar */
 .nav-section-title {
+    color: rgba(255, 255, 255, 0.85);
     font-size: 0.9rem;
     font-weight: 600;
-    opacity: 0.85;
     padding: 0.5rem 0;
+}
+
+/* Ensure nav links are readable on dark sidebar */
+::deep .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+::deep .nav-link .bi {
+    font-size: 1.25rem;
+    line-height: 1;
+    width: 1.5rem;   /* makes a clean icon column */
+    display: inline-flex;
+    justify-content: center;
+}
+
+/* Hover state */
+::deep .nav-link:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+/* Active link state */
+::deep .nav-link.active {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+}
+
+/* Sidebar brand title */
+::deep .navbar-brand {
+    color: #ffffff !important;
+    font-weight: 700;
 }
