@@ -10,7 +10,7 @@
         }
         <div class="search-shell">
             <input class="survey-search search-input" placeholder="Search survey list (ID / title / OMB / sample)…" @bind="SearchText"
-                   @bind:event="oninput" />
+                   @bind:event="oninput" @onfocus="OpenFiltersFromSearch" />
 
             <button class="search-filter-btn" type="button" @onclick="ToggleFilters" title="Filters">
                 <span class="bi bi-sliders" aria-hidden="true"></span>
@@ -426,6 +426,7 @@
 
     private void ToggleFilters() => ShowFilters = !ShowFilters;
     private void CloseFilters() => ShowFilters = false;
+    private void OpenFiltersFromSearch() => ShowFilters = true;
 
     private void ClearFilters()
     {

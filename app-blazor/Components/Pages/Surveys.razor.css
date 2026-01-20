@@ -42,10 +42,10 @@
 
 .search-shell {
     width: 100%;
-    max-width: 100%;
+    max-width: 70%;
     position: relative;
     z-index: 46;
-    padding-right: 4px;
+    padding-right: 0;
 }
 
 .search-input {
@@ -55,7 +55,7 @@
         linear-gradient(180deg, #ffffff, #f2f8f5) padding-box,
         linear-gradient(135deg, #0f4f2c, #55b07a 40%, #bfe9cf 70%, #0b2b4b) border-box;
     border-radius: 999px;
-    padding: 0.75rem 3.4rem 0.75rem 1.1rem;
+    padding: 0.95rem 4.2rem 0.95rem 1.3rem;
     font-weight: 700;
     color: var(--brand-navy);
     box-shadow: 0 10px 22px rgba(11, 43, 75, 0.08);
@@ -78,7 +78,7 @@
 .search-filter-btn {
     position: absolute;
     top: 50%;
-    right: 8px;
+    right: 22px;
     transform: translateY(-50%);
     border: 1px solid transparent;
     background:

@@ -11,7 +11,7 @@
         }
         <div class="search-shell">
             <input class="survey-search search-input" placeholder="Search survey list (ID / title / OMB / sample)…"
-                   @bind="SearchText" @bind:event="oninput" @onfocus="ShowViewAll" />
+                   @bind="SearchText" @bind:event="oninput" @onfocus="OnSearchFocus" />
 
             <button class="search-filter-btn" type="button" @onclick="ToggleFilters" title="Filters">
                 <span class="bi bi-sliders" aria-hidden="true"></span>
@@ -198,7 +198,11 @@
     private HashSet<string> StatusSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> YearSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-    private void ShowViewAll() => ShowViewAllOption = true;
+    private void OnSearchFocus()
+    {
+        ShowViewAllOption = true;
+        ShowFilters = true;
+    }
     private void CloseFilters() => ShowFilters = false;
 
     private void ViewAll()
