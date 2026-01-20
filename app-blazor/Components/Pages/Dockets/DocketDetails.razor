@@ -1,0 +1,99 @@
+@page "/omb-dockets/details"
+
+<h1>OMB Docket Details</h1>
+
+<div class="mb-3">
+    <span class="badge bg-success">Approved</span>
+    <span class="ms-2">OMB-2026-001 • Crop Yield Survey OMB Renewal</span>
+</div>
+
+<ul class="nav nav-tabs mb-3">
+    @foreach (var tab in Tabs)
+    {
+        <li class="nav-item">
+            <button class="nav-link @(ActiveTab == tab ? "active" : "")" @onclick="() => SetTab(tab)">
+                @tab
+            </button>
+        </li>
+    }
+</ul>
+
+@if (ActiveTab == "Overview")
+{
+    <div class="card">
+        <div class="card-body">
+            <div><strong>OMB Number:</strong> 0535-0123</div>
+            <div><strong>Expiration:</strong> 2028-06-30</div>
+            <div><strong>Owner:</strong> J. Park</div>
+            <div><strong>Linked Survey:</strong> 1001 Crop Yield</div>
+            <div><strong>Last Updated:</strong> 2026-01-14</div>
+        </div>
+    </div>
+}
+else if (ActiveTab == "Workflow")
+{
+    <div class="card">
+        <div class="card-body">
+            <h6>Approval Status</h6>
+            <ul>
+                <li>Draft created — 2026-01-10</li>
+                <li>Submitted for approval — 2026-01-12</li>
+                <li>Approved by OMB Clearance Officer — 2026-01-14</li>
+            </ul>
+        </div>
+    </div>
+}
+else if (ActiveTab == "History/Audit")
+{
+    <div class="card">
+        <div class="card-body">
+            <h6>Audit Log</h6>
+            <ul>
+                <li>Title updated by J. Park — 2026-01-11</li>
+                <li>Expiration date adjusted — 2026-01-12</li>
+                <li>Linked survey confirmed — 2026-01-12</li>
+            </ul>
+        </div>
+    </div>
+}
+else if (ActiveTab == "Downstream Systems")
+{
+    <div class="card">
+        <div class="card-body">
+            <h6>Downstream Transmission Status</h6>
+            <ul>
+                <li>Yellowbook Sync: Completed</li>
+                <li>ASB Registry: Pending</li>
+                <li>Archive Queue: Scheduled</li>
+            </ul>
+        </div>
+    </div>
+}
+else if (ActiveTab == "Share")
+{
+    <div class="card">
+        <div class="card-body">
+            <h6>Share Docket</h6>
+            <div class="mb-3">
+                <label class="form-label">Recipients</label>
+                <input class="form-control" placeholder="name@usda.gov" />
+            </div>
+            <button class="btn btn-outline-primary" type="button">Send Share Link</button>
+        </div>
+    </div>
+}
+
+@code {
+    private readonly List<string> Tabs = new()
+    {
+        "Overview",
+        "Workflow",
+        "History/Audit",
+        "Downstream Systems",
+        "Share"
+    };
+
+    private string ActiveTab { get; set; } = "Overview";
+
+    private void SetTab(string tab) => ActiveTab = tab;
+}

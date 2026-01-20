@@ -1,0 +1,73 @@
+@page "/budget/requests"
+
+<h1>Budget Requests / Approvals</h1>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-7">
+        <h5>Requests</h5>
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Request Id</th>
+                        <th>Category</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Requested By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var req in Requests)
+                    {
+                        <tr>
+                            <td>@req.RequestId</td>
+                            <td>@req.Category</td>
+                            <td>@req.Amount</td>
+                            <td><span class="badge @req.StatusBadge">@req.Status</span></td>
+                            <td>@req.RequestedBy</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-12 col-lg-5">
+        <h5>Approval Queue</h5>
+        <div class="list-group mb-3">
+            @foreach (var approval in Approvals)
+            {
+                <div class="list-group-item">
+                    <div class="fw-bold">@approval.Title</div>
+                    <div class="text-muted">@approval.Details</div>
+                    <div class="mt-2 d-flex gap-2">
+                        <button class="btn btn-sm btn-success" type="button">Approve</button>
+                        <button class="btn btn-sm btn-danger" type="button">Reject</button>
+                    </div>
+                </div>
+            }
+        </div>
+        <h6>History</h6>
+        <ul>
+            <li>REQ-102 approved — 2026-01-12</li>
+            <li>REQ-099 updated — 2026-01-09</li>
+        </ul>
+    </div>
+</div>
+
+@code {
+    private record RequestRow(string RequestId, string Category, string Amount, string Status, string StatusBadge, string RequestedBy);
+    private record ApprovalRow(string Title, string Details);
+
+    private readonly List<RequestRow> Requests = new()
+    {
+        new("REQ-104", "Travel", "$12,500", "Pending", "bg-warning text-dark", "M. Lewis"),
+        new("REQ-103", "Technology", "$22,000", "Approved", "bg-success", "A. Chen"),
+        new("REQ-102", "Staffing", "$55,000", "Approved", "bg-success", "D. Khan")
+    };
+
+    private readonly List<ApprovalRow> Approvals = new()
+    {
+        new("REQ-104 Travel", "Regional travel for Q2 data collection"),
+        new("REQ-105 Vendors", "Data validation contractor renewal")
+    };
+}

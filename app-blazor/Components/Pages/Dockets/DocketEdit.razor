@@ -1,0 +1,99 @@
+@page "/omb-dockets/edit"
+
+<h1>Create / Edit OMB Docket</h1>
+
+<EditForm Model="Form">
+    <div class="row g-4">
+        <div class="col-12 col-lg-7">
+            <div class="card">
+                <div class="card-header">Docket Details (Required)</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <InputText class="form-control" @bind-Value="Form.Title" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">OMB Number</label>
+                        <InputText class="form-control" @bind-Value="Form.OmbNumber" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Expiration Date</label>
+                        <InputDate @bind-Value="Form.ExpirationDate" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Linked Survey</label>
+                        <InputSelect class="form-select" @bind-Value="Form.LinkedSurvey">
+                            @foreach (var survey in SurveyOptions)
+                            {
+                                <option value="@survey">@survey</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Owner</label>
+                        <InputText class="form-control" @bind-Value="Form.Owner" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-5">
+            <div class="card">
+                <div class="card-header">Prepopulated from DB (Read-only)</div>
+                <div class="card-body">
+                    <div class="mb-2"><strong>Survey Id:</strong> @SurveySnapshot.SurveyId</div>
+                    <div class="mb-2"><strong>Survey Name:</strong> @SurveySnapshot.SurveyName</div>
+                    <div class="mb-2"><strong>OMB Expiration:</strong> @SurveySnapshot.OmbExpiration.ToString("yyyy-MM-dd")</div>
+                    <div class="mb-2"><strong>Sample Name:</strong> @SurveySnapshot.SampleName</div>
+                    <div class="mb-2"><strong>Primary Mode:</strong> @SurveySnapshot.PrimaryMode</div>
+                    <div class="mb-2"><strong>Last Updated:</strong> @SurveySnapshot.LastUpdated.ToString("yyyy-MM-dd")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-3 d-flex gap-2">
+        <button class="btn btn-outline-secondary" type="button">Save Draft</button>
+        <button class="btn btn-primary" type="button">Submit for Approval</button>
+    </div>
+</EditForm>
+
+@code {
+    private class DocketFormModel
+    {
+        public string Title { get; set; } = "Crop Yield Survey OMB Renewal";
+        public string OmbNumber { get; set; } = "0535-0123";
+        public DateTime ExpirationDate { get; set; } = new DateTime(2028, 6, 30);
+        public string LinkedSurvey { get; set; } = "1001 Crop Yield";
+        public string Owner { get; set; } = "J. Park";
+    }
+
+    private record SurveySnapshotRow(
+        string SurveyId,
+        string SurveyName,
+        DateTime OmbExpiration,
+        string SampleName,
+        string PrimaryMode,
+        DateTime LastUpdated
+    );
+
+    private readonly List<string> SurveyOptions = new()
+    {
+        "1001 Crop Yield",
+        "1002 ACP",
+        "1003 FLS",
+        "1004 DIS",
+        "1209 IWU"
+    };
+
+    private DocketFormModel Form { get; } = new();
+
+    private SurveySnapshotRow SurveySnapshot => new(
+        "1001",
+        "Crop Yield Survey (CY-2026)",
+        new DateTime(2028, 6, 30),
+        "CY-2026 Core Sample",
+        "CAWI",
+        new DateTime(2026, 1, 14)
+    );
+}

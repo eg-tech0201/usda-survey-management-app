@@ -1,24 +1,100 @@
 @page "/calendar"
 @using app_blazor.Components.Shared
 
-<h2 class="page-h2">Calendar</h2>
+<h1>Survey Timeline</h1>
 
-<div class="panel usda-border">
-    <div class="panel-title">Upcoming Schedule / Calendar View</div>
+<div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+    <div class="btn-group" role="group" aria-label="Timeline view">
+        <button class="btn btn-outline-primary @(IsRfoView ? "" : "active")" type="button" @onclick="() => SetView(false)">HQ</button>
+        <button class="btn btn-outline-primary @(IsRfoView ? "active" : "")" type="button" @onclick="() => SetView(true)">RFO</button>
+    </div>
+    <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" id="timelineNotify" checked="@NotificationsEnabled" />
+        <label class="form-check-label" for="timelineNotify">Notifications enabled (stub)</label>
+    </div>
+</div>
 
-    <TaskCalendar Events="@CalendarEvents" />
+<div class="row g-4">
+    <div class="col-12 col-lg-7">
+        <div class="panel usda-border">
+            <div class="panel-title">Milestone Calendar</div>
+            <TaskCalendar Events="@CalendarEvents" />
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-5">
+        <div class="card mb-3">
+            <div class="card-header">Milestone List</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Milestone</th>
+                                <th>HQ Start</th>
+                                <th>HQ End</th>
+                                @if (IsRfoView)
+                                {
+                                    <th>RFO Start</th>
+                                    <th>RFO End</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var milestone in Milestones)
+                            {
+                                <tr>
+                                    <td>@milestone.Title</td>
+                                    <td>@milestone.HqStart.ToString("yyyy-MM-dd")</td>
+                                    <td>@milestone.HqEnd.ToString("yyyy-MM-dd")</td>
+                                    @if (IsRfoView)
+                                    {
+                                        <td>@FormatDate(milestone.RfoStart)</td>
+                                        <td>@FormatDate(milestone.RfoEnd)</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Audit / History (stub)</div>
+            <div class="card-body">
+                <ul>
+                    <li>RFO start date updated — 2026-01-12</li>
+                    <li>HQ milestone added — 2026-01-10</li>
+                    <li>Reminder sent to regional team — 2026-01-08</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>
 
 @code {
     private record TaskRow(string Task, string Survey, DateTime DueDate, string Status);
+    private record MilestoneRow(string Title, DateTime HqStart, DateTime HqEnd, DateTime? RfoStart, DateTime? RfoEnd);
 
-    private List<TaskRow> Tasks = new() // dummy data just for display purposes
+    private bool IsRfoView { get; set; }
+    private bool NotificationsEnabled { get; set; } = true;
+
+    private readonly List<TaskRow> Tasks = new()
     {
         new("Finalize survey iteration dates", "1001 Crop Yield", new DateTime(2026, 1, 26, 17, 0, 0), "In progress"),
         new("Validate status master (pre-publish)", "1002 Ag Census Pilot", new DateTime(2026, 1, 18, 10, 0, 0), "Blocked"),
         new("Review questionnaire link (instrument)", "1001 Crop Yield", new DateTime(2026, 1, 22, 14, 30, 0), "Not started"),
         new("Resolve schedule conflict (overlap)", "1004 Dairy Inventory", new DateTime(2026, 1, 17, 9, 0, 0), "Overdue"),
         new("Confirm CAWI mode dates", "1003 Farm Labor Study", new DateTime(2026, 1, 11, 16, 0, 0), "In progress"),
+    };
+
+    private readonly List<MilestoneRow> Milestones = new()
+    {
+        new("Launch window", new DateTime(2026, 1, 5), new DateTime(2026, 1, 20), new DateTime(2026, 1, 7), new DateTime(2026, 1, 22)),
+        new("Enumerator training", new DateTime(2026, 1, 10), new DateTime(2026, 1, 15), new DateTime(2026, 1, 12), new DateTime(2026, 1, 16)),
+        new("Non-response follow-up", new DateTime(2026, 1, 21), new DateTime(2026, 2, 5), null, null),
+        new("Closeout", new DateTime(2026, 2, 8), new DateTime(2026, 2, 15), new DateTime(2026, 2, 10), new DateTime(2026, 2, 18))
     };
 
     private List<TaskCalendar.CalendarEvent> CalendarEvents =>
@@ -28,4 +104,8 @@
             Title = $"{t.Survey} — {t.Task}",
             Status = t.Status
         }).ToList();
+
+    private void SetView(bool isRfo) => IsRfoView = isRfo;
+
+    private static string FormatDate(DateTime? value) => value.HasValue ? value.Value.ToString("yyyy-MM-dd") : "—";
 }
