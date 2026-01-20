@@ -1,89 +1,266 @@
-.page-h2 {
-    margin-bottom: 1rem;
-}
-
-.panel {
-    border-radius: 16px;
-    background: var(--brand-bg);
-}
-
-.panel-title {
+.page-h1 {
+    margin: 0 0 0.75rem 0;
     font-weight: 900;
-    margin-bottom: 0.75rem;
     color: var(--brand-navy);
 }
 
-.table-scroll {
-    overflow: auto;
-    /* lets you keep lots of columns */
-    border-radius: 14px;
+/* toolbar */
+.surveys-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0 0 0.75rem 0;
+    flex-wrap: wrap;
+    /* pager won’t disappear on smaller widths */
 }
 
-.table-lite {
+.toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+    flex: 1 1 520px;
+}
+
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    flex: 0 0 auto;
+}
+
+.survey-search {
+    width: 100%;
+    max-width: 720px;
+}
+
+.btn-lite {
+    border: 1px solid var(--brand-border);
+    background: var(--brand-bg);
+    border-radius: 12px;
+    padding: 0.5rem 0.75rem;
+    font-weight: 800;
+    color: var(--brand-navy);
+    cursor: pointer;
+}
+
+.btn-lite:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    border: 1px solid color-mix(in srgb, var(--brand-green) 55%, black);
+    background: color-mix(in srgb, var(--brand-green) 14%, white);
+    border-radius: 12px;
+    padding: 0.5rem 0.75rem;
+    font-weight: 900;
+    color: var(--brand-green);
+    cursor: pointer;
+}
+
+.select-lite {
+    border: 1px solid var(--brand-border);
+    background: var(--brand-bg);
+    border-radius: 12px;
+    padding: 0.45rem 0.6rem;
+    font-weight: 800;
+    color: var(--brand-navy);
+}
+
+/* filters popover */
+.filters-pop {
+    position: absolute;
+    top: 44px;
+    left: 0;
+    width: 320px;
+    background: var(--brand-bg);
+    border: 1px solid var(--brand-border);
+    border-radius: 14px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+    padding: 0.75rem;
+    z-index: 50;
+}
+
+.filters-title {
+    font-weight: 900;
+    margin-bottom: 0.5rem;
+    color: var(--brand-navy);
+}
+
+.filters-row {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0.5rem 0;
+    font-weight: 800;
+    color: var(--brand-navy);
+}
+
+.filters-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+/* pager + page size */
+.pager {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pager-text {
+    font-weight: 800;
+    color: var(--brand-navy);
+    opacity: 0.9;
+    min-width: 140px;
+    text-align: center;
+}
+
+.pagesize {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.pagesize-label {
+    font-weight: 800;
+    opacity: 0.8;
+    color: var(--brand-navy);
+}
+
+.table-wrap {
+    border: 1px solid var(--brand-border);
+    border-radius: 16px;
+    overflow: auto;
+    background: var(--brand-bg);
+    width: 100%;
+}
+
+/* KEY: collapse so vertical grid lines render consistently */
+.table-surveys {
     width: 100%;
     border-collapse: collapse;
+    /* <-- change from separate */
     font-size: 0.92rem;
-    background: var(--brand-bg);
+    min-width: 100%;
+    table-layout: auto;
 }
 
-.table-lite th,
-.table-lite td {
-    border-top: 1px solid var(--brand-border);
-    padding: 0.65rem 0.55rem;
+/* Sticky header MUST have top: 0 inside the scroll container */
+.table-surveys thead th {
+    position: sticky;
+    top: 0;
+    /* <-- fixes header being offset */
+    z-index: 5;
+
+    background: #5a9772;
+    color: #ffffff;
+
+    padding: 0.75rem 0.65rem;
+    text-align: left;
+    font-weight: 900;
+
+    border-bottom: 2px solid rgba(11, 43, 75, 0.45);
+    border-right: 2px solid rgba(255, 255, 255, 0.9);
+    /* vertical line */
+}
+
+/* remove last header right border */
+.table-surveys thead th:last-child {
+    border-right: none;
+}
+
+/* Body cells with both vertical + horizontal lines */
+.table-surveys td {
+    padding: 0.65rem 0.65rem;
+    border-bottom: 2px solid rgba(11, 43, 75, 0.28);
+    border-right: 2px solid rgba(11, 43, 75, 0.24);
     vertical-align: top;
+    background: #fff;
+    /* helps grid lines show cleanly */
+    transition: background-color 120ms ease;
+}
+
+.table-surveys td:last-child {
+    border-right: none;
+}
+
+.table-surveys tbody tr:hover {
+    background: rgba(31, 111, 63, 0.08);
+}
+
+.table-surveys tbody tr:hover td {
+    background: rgba(31, 111, 63, 0.08);
+}
+
+.td-id {
+    font-weight: 900;
+    color: var(--brand-navy);
+    width: 64px;
     white-space: nowrap;
 }
 
-.table-lite thead th {
-    border-top: none;
-    color: var(--brand-muted);
-    font-weight: 800;
-    background: color-mix(in srgb, var(--brand-surface) 60%, transparent);
-    position: sticky;
-    top: 0;
-    /* sticky header while horizontal scrolling */
-    z-index: 2;
-}
-
-.cell-strong {
+.td-title {
     font-weight: 800;
     color: var(--brand-navy);
-    white-space: normal;
-    /* allow title to wrap */
-    min-width: 260px;
+    min-width: 320px;
 }
 
+/* status pill */
 .status-pill {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0.25rem 0.65rem;
     border-radius: 10px;
-    font-size: 0.82rem;
-    font-weight: 800;
     line-height: 1;
-    min-width: 104px;
+    font-size: 0.82rem;
+    font-weight: 900;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    white-space: nowrap;
+    min-width: 108px;
     text-align: center;
-    border: 1px solid transparent;
 }
 
-/* uses your :root status tokens */
 .pill-progress {
-    background: color-mix(in srgb, var(--status-progress) 18%, white);
+    background: color-mix(in srgb, var(--status-progress) 18%, transparent);
     color: var(--status-progress);
 }
 
 .pill-blocked {
-    background: color-mix(in srgb, var(--status-blocked) 22%, white);
+    background: color-mix(in srgb, var(--status-blocked) 22%, transparent);
     color: #7a5200;
 }
 
 .pill-notstarted {
-    background: color-mix(in srgb, var(--status-notstarted) 22%, white);
+    background: color-mix(in srgb, var(--status-notstarted) 22%, transparent);
     color: var(--brand-muted);
 }
 
 .pill-overdue {
-    background: color-mix(in srgb, var(--status-overdue) 18%, white);
+    background: color-mix(in srgb, var(--status-overdue) 18%, transparent);
     color: var(--status-overdue);
+}
+
+/* mobile-ish */
+@media (max-width: 900px) {
+    .surveys-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        top: 64px;
+    }
+
+    .toolbar-right {
+        justify-content: space-between;
+    }
+
+    .survey-search {
+        width: 100%;
+    }
 }

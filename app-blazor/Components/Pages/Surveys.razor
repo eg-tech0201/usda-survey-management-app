@@ -1,79 +1,351 @@
 @page "/surveys"
 
-<h2 class="page-h2">Surveys</h2>
+<h1 class="page-h1">Surveys</h1>
 
-<div class="panel usda-border">
-    <div class="panel-title">Survey List</div>
+<div class="surveys-toolbar">
+    <div class="toolbar-left">
+        <input class="survey-search" placeholder="Search survey list (ID / title / OMB / sample)…" @bind="SearchText"
+            @bind:event="oninput" />
 
-    <div class="table-scroll">
-        <table class="table-lite">
-            <thead>
-                <tr>
-                    <th style="width: 90px;">ID</th>
-                    <th style="min-width: 260px;">Survey Title</th>
-                    <th style="width: 140px;">Survey Date</th>
-                    <th style="width: 130px;">OMB Number</th>
-                    <th style="width: 140px;">OMB Expires</th>
-                    <th style="min-width: 220px;">Sample Name</th>
-                    <th style="width: 120px;">Start Date</th>
-                    <th style="width: 120px;">Stop Date</th>
-                    <th style="width: 120px;">Status</th>
-                </tr>
-            </thead>
+        <button class="btn-lite" @onclick="ToggleFilters">
+            Filters
+        </button>
 
-            <tbody>
-                @foreach (var s in Survey)
-                {
-                    <tr>
-                        <td>@s.Id</td>
-                        <td class="cell-strong">@s.Title</td>
-                        <td>@s.SurveyDate.ToString("yyyy-MM-dd")</td>
-                        <td>@s.OmbNumber</td>
-                        <td>@s.OmbExpires.ToString("yyyy-MM-dd")</td>
-                        <td>@s.SampleName</td>
-                        <td>@s.StartDate.ToString("yyyy-MM-dd")</td>
-                        <td>@s.StopDate.ToString("yyyy-MM-dd")</td>
-                        <td>
-                            <span class="status-pill @GetPill(s.Status)">@s.Status</span>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        @if (ShowFilters)
+        {
+            <div class="filters-pop">
+                <div class="filters-title">Filters</div>
+
+                <label class="filters-row">
+                    <span>Status</span>
+                    <select class="select-lite" @bind="StatusFilter">
+                        <option value="">All</option>
+                        <option value="Not started">Not started</option>
+                        <option value="In progress">In progress</option>
+                        <option value="Blocked">Blocked</option>
+                        <option value="Overdue">Overdue</option>
+                    </select>
+                </label>
+
+                <label class="filters-row">
+                    <span>Year</span>
+                    <select class="select-lite" @bind="YearFilter">
+                        <option value="">All</option>
+                        @foreach (var y in Years)
+                        {
+                            <option value="@y">@y</option>
+                        }
+                    </select>
+                </label>
+
+                <div class="filters-actions">
+                    <button class="btn-lite" @onclick="ClearFilters">Clear</button>
+                    <button class="btn-primary" @onclick="() => ShowFilters = false">Done</button>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="toolbar-right">
+        <div class="pager">
+            <button class="btn-lite" @onclick="PrevPage" disabled="@IsPrevDisabled">‹</button>
+
+            <span class="pager-text">
+                @PageSummary
+            </span>
+
+            <button class="btn-lite" @onclick="NextPage" disabled="@IsNextDisabled">›</button>
+        </div>
+
+        <div class="pagesize">
+            <span class="pagesize-label">Rows:</span>
+            <select class="select-lite" @bind="PageSizeString" @bind:after="OnPageSizeChanged">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="All">All</option>
+            </select>
+        </div>
     </div>
 </div>
 
+<div class="table-wrap">
+    <table class="table-surveys">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Survey Title</th>
+                <th>Survey Date</th>
+                <th>OMB Number</th>
+                <th>OMB Expires</th>
+                <th>Sample Name</th>
+                <th>Start Date</th>
+                <th>Stop Date</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var s in PagedRows)
+            {
+                <tr>
+                    <td class="td-id">@s.Id</td>
+                    <td class="td-title">@s.Title</td>
+                    <td>@s.SurveyDate.ToString("yyyy-MM-dd")</td>
+                    <td>@s.OmbNumber</td>
+                    <td>@s.OmbExpires.ToString("yyyy-MM-dd")</td>
+                    <td>@s.SampleName</td>
+                    <td>@s.StartDate.ToString("yyyy-MM-dd")</td>
+                    <td>@s.StopDate.ToString("yyyy-MM-dd")</td>
+                    <td>
+                        <span class="status-pill @StatusClass(s.Status)">@s.Status</span>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
 @code {
+    // ---- DEMO model (you already have this) ----
     private record SurveyRow(
-        int Id,
-        DateTime SurveyDate,
-        string Title,
-        string OmbNumber,
-        DateTime OmbExpires,
-        string SampleName,
-        DateTime StartDate,
-        DateTime StopDate,
-        string Status
+    int Id,
+    DateTime SurveyDate,
+    string Title,
+    string OmbNumber,
+    DateTime OmbExpires,
+    string SampleName,
+    DateTime StartDate,
+    DateTime StopDate,
+    string Status
     );
 
-    private List<SurveyRow> Survey = new()
+    // ---- Your list (keep your seed rows + generator) ----
+    private List<SurveyRow> SurveyRows = new()
     {
-        new(312, new DateTime(2025, 11, 01), "PLACEMENT OF PULLET CHICKS FOR HATCHERY SUPPLY FLOCKS", "0535-0004", new DateTime(2027, 11, 30), "316-PULLET PLACEMENTS", new DateTime(2025, 11, 01), new DateTime(2025, 12, 15), "In progress"),
-        new(1001, new DateTime(2026, 01, 05), "Crop Yield Survey (CY-2026)", "0535-0123", new DateTime(2028, 06, 30), "CY-2026 Core Sample", new DateTime(2026, 01, 05), new DateTime(2026, 03, 31), "Not started"),
-        new(1002, new DateTime(2026, 01, 08), "Agricultural Census Pilot (ACP)", "0535-0456", new DateTime(2027, 09, 30), "ACP Pilot Frame", new DateTime(2026, 01, 10), new DateTime(2026, 02, 28), "Blocked"),
-        new(1003, new DateTime(2026, 01, 11), "Farm Labor Study (FLS)", "0535-0789", new DateTime(2029, 01, 31), "FLS 2026 Sample", new DateTime(2026, 01, 15), new DateTime(2026, 04, 15), "In progress"),
-        new(1004, new DateTime(2026, 01, 15), "Dairy Inventory Survey (DIS)", "0535-0321", new DateTime(2027, 12, 31), "DIS Monthly Frame", new DateTime(2026, 01, 01), new DateTime(2026, 01, 31), "Overdue"),
-        new(1107, new DateTime(2026, 02, 01), "Producer Price Index (PPI) Follow-up", "0535-0555", new DateTime(2028, 03, 31), "PPI Follow-up List", new DateTime(2026, 02, 01), new DateTime(2026, 02, 20), "Not started"),
-        new(1209, new DateTime(2026, 02, 10), "Irrigation & Water Use (IWU)", "0535-0666", new DateTime(2028, 10, 31), "IWU Stratified Sample", new DateTime(2026, 02, 12), new DateTime(2026, 05, 01), "In progress"),
-        new(1302, new DateTime(2026, 03, 01), "Organic Production Survey (OPS)", "0535-0777", new DateTime(2029, 05, 31), "OPS Recontact Frame", new DateTime(2026, 03, 01), new DateTime(2026, 06, 15), "Not started"),
+        new(312, new DateTime(2025, 11, 01), "PLACEMENT OF PULLET CHICKS FOR HATCHERY SUPPLY FLOCKS", "0535-0004",
+        new DateTime(2027, 11, 30), "316-PULLET PLACEMENTS",
+        new DateTime(2025, 11, 01), new DateTime(2025, 12, 15), "In progress"),
+
+        new(1001, new DateTime(2026, 01, 05), "Crop Yield Survey (CY-2026)", "0535-0123",
+        new DateTime(2028, 06, 30), "CY-2026 Core Sample",
+        new DateTime(2026, 01, 05), new DateTime(2026, 03, 31), "Not started"),
+
+        new(1002, new DateTime(2026, 01, 08), "Agricultural Census Pilot (ACP)", "0535-0456",
+        new DateTime(2027, 09, 30), "ACP Pilot Frame",
+        new DateTime(2026, 01, 10), new DateTime(2026, 02, 28), "Blocked"),
+
+        new(1003, new DateTime(2026, 01, 11), "Farm Labor Study (FLS)", "0535-0789",
+        new DateTime(2029, 01, 31), "FLS 2026 Sample",
+        new DateTime(2026, 01, 15), new DateTime(2026, 04, 15), "In progress"),
+
+        new(1004, new DateTime(2026, 01, 15), "Dairy Inventory Survey (DIS)", "0535-0321",
+        new DateTime(2027, 12, 31), "DIS Monthly Frame",
+        new DateTime(2026, 01, 01), new DateTime(2026, 01, 31), "Overdue"),
+
+        new(1107, new DateTime(2026, 02, 01), "Producer Price Index (PPI) Follow-up", "0535-0555",
+        new DateTime(2028, 03, 31), "PPI Follow-up List",
+        new DateTime(2026, 02, 01), new DateTime(2026, 02, 20), "Not started"),
+
+        new(1209, new DateTime(2026, 02, 10), "Irrigation & Water Use (IWU)", "0535-0666",
+        new DateTime(2028, 10, 31), "IWU Stratified Sample",
+        new DateTime(2026, 02, 12), new DateTime(2026, 05, 01), "In progress"),
+
+        new(1302, new DateTime(2026, 03, 01), "Organic Production Survey (OPS)", "0535-0777",
+        new DateTime(2029, 05, 31), "OPS Recontact Frame",
+        new DateTime(2026, 03, 01), new DateTime(2026, 06, 15), "Not started"),
     };
 
-    private string GetPill(string status) => status switch
+    // ---- toolbar state ----
+    private string SearchText { get; set; } = "";
+    private bool ShowFilters { get; set; } = false;
+    private string StatusFilter { get; set; } = "";
+    private string YearFilter { get; set; } = "";
+
+    // ---- paging ----
+    private int PageIndex { get; set; } = 0;
+    private int PageSize { get; set; } = 10; // default
+    private string PageSizeString { get; set; } = "10";
+
+    protected override void OnInitialized()
+    {
+        GenerateAdditionalSurveys(100);
+        PageSizeString = PageSize == 0 ? "All" : PageSize.ToString(); // will be "10"
+    }
+
+    // Recompute on every render (fine for demo sizes)
+    private List<SurveyRow> FilteredRows => ApplySurveyFilters().ToList();
+
+    private IEnumerable<SurveyRow> PagedRows
+    {
+        get
+        {
+            var rows = FilteredRows;
+
+            if (PageSize <= 0) return rows;
+
+            // clamp PageIndex if filters shrink results
+            var maxPage = Math.Max(0, (int)Math.Ceiling(rows.Count / (double)PageSize) - 1);
+            if (PageIndex > maxPage) PageIndex = maxPage;
+
+            return rows.Skip(PageIndex * PageSize).Take(PageSize);
+        }
+    }
+
+    private string PageSummary
+    {
+        get
+        {
+            var total = FilteredRows.Count;
+            if (total == 0) return "0 results";
+
+            if (PageSize <= 0) return $"1–{total} of {total}";
+
+            var start = PageIndex * PageSize + 1;
+            var end = Math.Min(total, (PageIndex + 1) * PageSize);
+            return $"{start}–{end} of {total}";
+        }
+    }
+
+    private bool IsPrevDisabled => PageIndex <= 0 || PageSize <= 0;
+    private bool IsNextDisabled
+    {
+        get
+        {
+            if (PageSize <= 0) return true;
+            var total = FilteredRows.Count;
+            return (PageIndex + 1) * PageSize >= total;
+        }
+    }
+
+    private void PrevPage()
+    {
+        if (PageIndex > 0) PageIndex--;
+    }
+
+    private void NextPage()
+    {
+        if (!IsNextDisabled) PageIndex++;
+    }
+
+    private void OnPageSizeChanged()
+    {
+        // reset to first page whenever page size changes
+        PageIndex = 0;
+
+        PageSizeString = PageSizeString?.Trim() ?? "20";
+        if (PageSizeString.Equals("All", StringComparison.OrdinalIgnoreCase))
+        {
+            PageSize = 0; // 0 means ALL
+        }
+        else if (!int.TryParse(PageSizeString, out var n) || n <= 0)
+        {
+            PageSize = 20;
+            PageSizeString = "20";
+        }
+        else
+        {
+            PageSize = n;
+        }
+    }
+
+    private void ToggleFilters() => ShowFilters = !ShowFilters;
+
+    private void ClearFilters()
+    {
+        StatusFilter = "";
+        YearFilter = "";
+        SearchText = "";
+        PageIndex = 0;
+    }
+
+    private IEnumerable<string> Years =>
+    SurveyRows.Select(s => s.SurveyDate.Year.ToString())
+    .Distinct()
+    .OrderByDescending(y => y);
+
+    private IEnumerable<SurveyRow> ApplySurveyFilters()
+    {
+        // ✅ key fix: SurveyRows (your list), NOT Surveys
+        IEnumerable<SurveyRow> q = SurveyRows;
+
+        // search
+        if (!string.IsNullOrWhiteSpace(SearchText))
+        {
+            var t = SearchText.Trim().ToLowerInvariant();
+            q = q.Where(s =>
+            s.Id.ToString().Contains(t) ||
+            s.Title.ToLowerInvariant().Contains(t) ||
+            s.OmbNumber.ToLowerInvariant().Contains(t) ||
+            s.SampleName.ToLowerInvariant().Contains(t));
+        }
+
+        // status filter
+        if (!string.IsNullOrWhiteSpace(StatusFilter))
+        {
+            q = q.Where(s => s.Status.Equals(StatusFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // year filter (survey date year)
+        if (!string.IsNullOrWhiteSpace(YearFilter))
+        {
+            if (int.TryParse(YearFilter, out var y))
+                q = q.Where(s => s.SurveyDate.Year == y);
+        }
+
+        return q.OrderBy(s => s.Id);
+    }
+
+    private static string StatusClass(string status) => status switch
     {
         "In progress" => "pill-progress",
         "Blocked" => "pill-blocked",
-        "Not started" => "pill-notstarted",
         "Overdue" => "pill-overdue",
-        _ => ""
+        "Not started" => "pill-notstarted",
+        _ => "pill-notstarted"
     };
+
+    private void GenerateAdditionalSurveys(int targetCount)
+    {
+        var titles = new[]
+        {
+"Grain Stocks Survey",
+"Livestock Slaughter Report",
+"Hogs and Pigs Survey",
+"Acreage Report",
+"Cotton Objective Yield Survey",
+"Cattle Inventory Survey",
+"Milk Production Survey",
+"Rice Stocks Survey",
+"Vegetable Production Survey",
+"Fruit Chemical Use Survey"
+};
+
+        var statuses = new[] { "Not started", "In progress", "Blocked", "Overdue" };
+
+        int nextId = SurveyRows.Max(s => s.Id) + 1;
+        var rand = new Random(42);
+
+        while (SurveyRows.Count < targetCount)
+        {
+            var title = titles[rand.Next(titles.Length)];
+            var year = rand.Next(2025, 2028);
+
+            var surveyDate = new DateTime(year, rand.Next(1, 13), rand.Next(1, 25));
+            var startDate = surveyDate.AddDays(rand.Next(0, 5));
+            var stopDate = startDate.AddDays(rand.Next(20, 120));
+
+            SurveyRows.Add(new SurveyRow(
+            nextId++,
+            surveyDate,
+            $"{title} ({year})",
+            $"0535-{rand.Next(1000, 9999)}",
+            surveyDate.AddYears(rand.Next(2, 4)),
+            $"{title.Split(' ')[0]} Frame {year}",
+            startDate,
+            stopDate,
+            statuses[rand.Next(statuses.Length)]
+            ));
+        }
+    }
 }
