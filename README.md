@@ -1,5 +1,5 @@
 ### Download & Install:
-- .NET SDK 10 https://dotnet.microsoft.com/en-us/download/dotnet/10.0 
+- .NET SDK 9 (for now - upgrade 10 later)
 
 confirm with `dotnet --version`
 
