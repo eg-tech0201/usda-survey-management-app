@@ -1,0 +1,58 @@
+@page "/reports"
+
+<h1>Reports Hub</h1>
+
+<div class="row g-3 mb-3">
+    <div class="col-12 col-md-4">
+        <label class="form-label">Report Type</label>
+        <select class="form-select">
+            <option>Yellowbook</option>
+            <option>ASB</option>
+        </select>
+    </div>
+    <div class="col-12 col-md-4">
+        <label class="form-label">Survey</label>
+        <select class="form-select">
+            <option>1001 Crop Yield</option>
+            <option>1002 ACP</option>
+            <option>1209 IWU</option>
+        </select>
+    </div>
+    <div class="col-12 col-md-4">
+        <label class="form-label">OMB Docket</label>
+        <select class="form-select">
+            <option>OMB-2026-001</option>
+            <option>OMB-2026-014</option>
+            <option>OMB-2026-099</option>
+        </select>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-bordered align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Report Id</th>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Generated</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>RPT-2201</td>
+                <td>OMB Compliance Summary</td>
+                <td><span class="badge bg-success">Ready</span></td>
+                <td>2026-01-15</td>
+            </tr>
+            <tr>
+                <td>RPT-2202</td>
+                <td>ASB Data Quality Report</td>
+                <td><span class="badge bg-warning text-dark">Draft</span></td>
+                <td>2026-01-14</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<button class="btn btn-outline-secondary" type="button">Export Report</button>

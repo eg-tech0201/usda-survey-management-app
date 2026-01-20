@@ -1,0 +1,76 @@
+@page "/budget"
+
+<h1>Budget Dashboard</h1>
+
+<div class="row g-3 mb-3">
+    <div class="col-12 col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="text-muted">Allocated</div>
+                <div class="fs-4 fw-bold">$1.2M</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="text-muted">Spent</div>
+                <div class="fs-4 fw-bold">$740K</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="text-muted">Remaining</div>
+                <div class="fs-4 fw-bold">$460K</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-bordered align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Category</th>
+                <th>Allocated</th>
+                <th>Spent</th>
+                <th>Remaining</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in BudgetRows)
+            {
+                <tr>
+                    <td>@row.Category</td>
+                    <td>@row.Allocated</td>
+                    <td>@row.Spent</td>
+                    <td>@row.Remaining</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <div class="card-header">Alerts</div>
+    <div class="card-body">
+        <ul>
+            <li>Travel budget at 82% utilization.</li>
+            <li>Vendor contracts renew in 30 days.</li>
+        </ul>
+    </div>
+</div>
+
+@code {
+    private record BudgetRow(string Category, string Allocated, string Spent, string Remaining);
+
+    private readonly List<BudgetRow> BudgetRows = new()
+    {
+        new("Staffing", "$480K", "$310K", "$170K"),
+        new("Travel", "$150K", "$123K", "$27K"),
+        new("Technology", "$320K", "$190K", "$130K"),
+        new("Vendors", "$250K", "$117K", "$133K")
+    };
+}

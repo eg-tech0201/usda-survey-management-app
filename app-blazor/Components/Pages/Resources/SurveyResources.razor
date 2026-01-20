@@ -1,0 +1,87 @@
+@page "/resources"
+
+<h1>Survey Resources</h1>
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <button class='nav-link @(ActiveTab == "Team Members" ? "active" : "")' @onclick='@(() => SetTab("Team Members"))'>Team Members</button>
+    </li>
+    <li class="nav-item">
+        <button class='nav-link @(ActiveTab == "Systems/Tools" ? "active" : "")' @onclick='@(() => SetTab("Systems/Tools"))'>Systems/Tools</button>
+    </li>
+</ul>
+
+@if (ActiveTab == "Team Members")
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Notes</th>
+                    <th>CAWI</th>
+                    <th>CATI</th>
+                    <th>CAPI</th>
+                    <th>Paper</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var member in TeamMembers)
+                {
+                    <tr>
+                        <td>@member.Name</td>
+                        <td>@member.Role</td>
+                        <td>@member.Notes</td>
+                        <td><input type="checkbox" checked="@member.Cawi" /></td>
+                        <td><input type="checkbox" checked="@member.Cati" /></td>
+                        <td><input type="checkbox" checked="@member.Capi" /></td>
+                        <td><input type="checkbox" checked="@member.Paper" /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body">
+            <h6>Systems / Tools Enabled</h6>
+            <div class="d-flex flex-wrap gap-3">
+                @foreach (var tool in Tools)
+                {
+                    <label class="form-check-label">
+                        <input type="checkbox" class="form-check-input me-1" checked="@tool.Enabled" />
+                        @tool.Name
+                    </label>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private record TeamMemberRow(string Name, string Role, string Notes, bool Cawi, bool Cati, bool Capi, bool Paper);
+    private record ToolRow(string Name, bool Enabled);
+
+    private string ActiveTab { get; set; } = "Team Members";
+
+    private readonly List<TeamMemberRow> TeamMembers = new()
+    {
+        new("A. Chen", "Survey Lead", "HQ owner", true, true, false, false),
+        new("M. Lewis", "RFO Coordinator", "Regional schedule", true, false, true, true),
+        new("D. Khan", "Analyst", "Metadata review", true, true, false, false)
+    };
+
+    private readonly List<ToolRow> Tools = new()
+    {
+        new("CAPI", true),
+        new("CATI", true),
+        new("CAWI", true),
+        new("Paper", false),
+        new("Secure Transfer", true)
+    };
+
+    private void SetTab(string tab) => ActiveTab = tab;
+}

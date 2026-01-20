@@ -1,11 +1,11 @@
 .sms-topbar {
     display: grid;
-    grid-template-columns: 1.2fr 2fr 1.2fr;
+    grid-template-columns: auto 1fr auto;;
     gap: 1rem;
     align-items: center;
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid rgba(0,0,0,0.1);
-    background: #ffffff;
+    border-bottom: 1px solid var(--brand-border);
+    background: var(--brand-surface);
     position: sticky;
     top: 0;
     z-index: 5;
@@ -18,22 +18,25 @@
 }
 
 .hamburger {
-    border: 1px solid rgba(0,0,0,0.15);
-    background: white;
+    border: 1px solid var(--brand-border);
+    background: var(--brand-bg);
     border-radius: 10px;
     padding: 0.35rem 0.6rem;
     cursor: pointer;
+    color: var(--brand-navy);
 }
 
 .page-title {
-    font-weight: 700;
+    font-weight: 800;
+    color: var(--brand-navy);
 }
 
 .sms-topbar-center .search {
     width: 100%;
     padding: 0.6rem 0.75rem;
     border-radius: 10px;
-    border: 1px solid rgba(0,0,0,0.15);
+    border: 1px solid var(--brand-border);
+    background: var(--brand-bg);
 }
 
 .sms-topbar-right {
@@ -45,18 +48,19 @@
 
 .icon-btn {
     position: relative;
-    border: 1px solid rgba(0,0,0,0.15);
-    background: white;
+    border: 1px solid var(--brand-border);
+    background: var(--brand-bg);
     border-radius: 10px;
     padding: 0.35rem 0.6rem;
     cursor: pointer;
+    color: var(--brand-navy);
 }
 
 .badge {
     position: absolute;
     top: -6px;
     right: -6px;
-    background: #d00;
+    background: var(--status-overdue);
     color: white;
     font-size: 0.75rem;
     padding: 0 6px;
@@ -65,40 +69,42 @@
 
 .email {
     font-size: 0.9rem;
-    opacity: 0.9;
+    color: var(--brand-muted);
 }
 
 .avatar {
     font-size: 1.1rem;
+    color: var(--brand-navy);
 }
 
 .notif-dropdown {
-    position: fixed;
-    right: 1rem;
-    top: 3.75rem;
-    width: 340px;
-    border: 1px solid rgba(0,0,0,0.15);
+    position: absolute;
+    top: 64px;
+    right: 20px;
+    width: 320px;
+    background: var(--brand-bg);
+    border: 1px solid var(--brand-border);
     border-radius: 12px;
-    background: white;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-    z-index: 20;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    z-index: 9999;
     padding: 0.75rem;
 }
 
-.notif-header {
-    font-weight: 700;
-    margin-bottom: 0.5rem;
+.notif-dropdown ul {
+    margin: 0;
+    padding-left: 1rem;
 }
 
-.notif-dropdown ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+.notif-header {
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    color: var(--brand-navy);
 }
 
 .notif-dropdown li {
     padding: 0.5rem 0;
-    border-top: 1px solid rgba(0,0,0,0.08);
+    border-top: 1px solid var(--brand-border);
+    color: var(--brand-navy);
 }
 
 .notif-dropdown li:first-child {

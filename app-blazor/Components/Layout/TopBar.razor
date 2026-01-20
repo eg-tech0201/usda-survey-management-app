@@ -3,8 +3,6 @@
         <button type="button" class="hamburger" title="Toggle menu" @onclick="ToggleNav">
             <span class="bi bi-list" aria-hidden="true"></span>
         </button>
-
-        <span class="page-title">@Title</span>
     </div>
 
     <div class="sms-topbar-center">
@@ -32,9 +30,10 @@
     <div class="notif-dropdown">
         <div class="notif-header">Notifications</div>
         <ul>
+            <li><strong>OMB-2026-014</strong> — Docket approval pending</li>
+            <li><strong>OMB-2026-001</strong> — Docket approved</li>
             <li><strong>101</strong> — 6 overdue tasks</li>
             <li><strong>102</strong> — 1 schedule conflict</li>
-            <li><strong>103</strong> — Survey 1002 missing mode dates</li>
         </ul>
     </div>
 }
@@ -44,7 +43,7 @@
     [Parameter] public EventCallback OnToggleNav { get; set; }
 
     private bool ShowNotifs;
-    private int NotifCount => 3;
+    private int NotifCount => 4;
 
     private void ToggleNotifs() => ShowNotifs = !ShowNotifs;
 

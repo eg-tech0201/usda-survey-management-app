@@ -1,3 +1,625 @@
-@page "/surveys"
-<h3>Surveys</h3>
-<p>Placeholder surveys list (table goes here).</p>
+@page "/surveys/results"
+
+<h1 class="page-h1">Surveys</h1>
+
+<div class="surveys-toolbar">
+    <div class="toolbar-left">
+        @if (ShowFilters)
+        {
+            <div class="filters-backdrop" @onclick="CloseFilters"></div>
+        }
+        <div class="search-shell">
+            <input class="survey-search search-input" placeholder="Search survey list (ID / title / OMB / sample)…" @bind="SearchText"
+                   @bind:event="oninput" />
+
+            <button class="search-filter-btn" type="button" @onclick="ToggleFilters" title="Filters">
+                <span class="bi bi-sliders" aria-hidden="true"></span>
+            </button>
+
+            @if (ShowFilters)
+            {
+                <div class="filters-pop" @onclick:stopPropagation="true">
+                    <div class="filters-title">Filters</div>
+
+                    <div class="filters-group">
+                        <div class="filters-subtitle">Start Date – Stop Date</div>
+                        <div class="filters-inline">
+                            <InputDate class="select-lite" @bind-Value="StartDateFilter" />
+                            <InputDate class="select-lite" @bind-Value="StopDateFilter" />
+                        </div>
+                    </div>
+
+                    <div class="filters-group">
+                        <div class="filters-subtitle">States</div>
+                        <div class="filters-checks">
+                            @foreach (var state in States)
+                            {
+                                <label class="check-pill">
+                                    <input type="checkbox"
+                                           checked="@StateSelections.Contains(state)"
+                                           @onchange="e => ToggleSelection(StateSelections, state, e)" />
+                                    <span>@state</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="filters-group">
+                        <div class="filters-subtitle">Regions</div>
+                        <div class="filters-checks">
+                            @foreach (var region in Regions)
+                            {
+                                <label class="check-pill">
+                                    <input type="checkbox"
+                                           checked="@RegionSelections.Contains(region)"
+                                           @onchange="e => ToggleSelection(RegionSelections, region, e)" />
+                                    <span>@region</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="filters-group">
+                        <div class="filters-subtitle">Mode</div>
+                        <div class="filters-checks">
+                            @foreach (var mode in Modes)
+                            {
+                                <label class="check-pill">
+                                    <input type="checkbox"
+                                           checked="@ModeSelections.Contains(mode)"
+                                           @onchange="e => ToggleSelection(ModeSelections, mode, e)" />
+                                    <span>@mode</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="filters-group">
+                        <div class="filters-subtitle">Show # of results</div>
+                        <select class="select-lite" @bind="PageSizeString" @bind:after="OnPageSizeChanged">
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="All">All</option>
+                        </select>
+                    </div>
+
+                    <div class="filters-group">
+                        <div class="filters-subtitle">Status</div>
+                        <div class="filters-checks">
+                            @foreach (var status in StatusOptions)
+                            {
+                                <label class="check-pill">
+                                    <input type="checkbox"
+                                           checked="@StatusSelections.Contains(status)"
+                                           @onchange="e => ToggleSelection(StatusSelections, status, e)" />
+                                    <span>@status</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="filters-group">
+                        <div class="filters-subtitle">Year</div>
+                        <div class="filters-checks">
+                            @foreach (var y in Years)
+                            {
+                                <label class="check-pill">
+                                    <input type="checkbox"
+                                           checked="@YearSelections.Contains(y)"
+                                           @onchange="e => ToggleSelection(YearSelections, y, e)" />
+                                    <span>@y</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="filters-actions">
+                        <button class="btn-lite" @onclick="ClearFilters">Clear</button>
+                        <button class="btn-primary" @onclick="() => ShowFilters = false">Done</button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="toolbar-meta">
+        @if (SelectedFilterChips.Any())
+        {
+            <div class="search-chips">
+                @foreach (var chip in SelectedFilterChips)
+                {
+                    <button type="button" class="chip" @onclick="chip.OnRemove">
+                        <span class="chip-x">×</span>
+                        <span>@chip.Label</span>
+                    </button>
+                }
+            </div>
+        }
+
+        <div class="toolbar-right">
+            <div class="pager">
+                <button class="btn-lite" @onclick="PrevPage" disabled="@IsPrevDisabled">‹</button>
+
+                <span class="pager-text">
+                    @PageSummary
+                </span>
+
+                <button class="btn-lite" @onclick="NextPage" disabled="@IsNextDisabled">›</button>
+            </div>
+
+            <div class="pagesize">
+                <span class="pagesize-label">Rows:</span>
+                <select class="select-lite" @bind="PageSizeString" @bind:after="OnPageSizeChanged">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="All">All</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="table-wrap">
+    <table class="table-surveys">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Survey Title</th>
+                <th>Survey Date</th>
+                <th>OMB Number</th>
+                <th>OMB Expires</th>
+                <th>Sample Name</th>
+                <th>Start Date</th>
+                <th>Stop Date</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var s in PagedRows)
+            {
+                <tr>
+                    <td class="td-id">@s.Id</td>
+                    <td class="td-title">@s.Title</td>
+                    <td>@s.SurveyDate.ToString("yyyy-MM-dd")</td>
+                    <td>@s.OmbNumber</td>
+                    <td>@s.OmbExpires.ToString("yyyy-MM-dd")</td>
+                    <td>@s.SampleName</td>
+                    <td>@s.StartDate.ToString("yyyy-MM-dd")</td>
+                    <td>@s.StopDate.ToString("yyyy-MM-dd")</td>
+                    <td>
+                        <span class="status-pill @StatusClass(s.Status)">@s.Status</span>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "q")] public string? Query { get; set; }
+    [SupplyParameterFromQuery(Name = "status")] public string? QueryStatus { get; set; }
+    [SupplyParameterFromQuery(Name = "year")] public string? QueryYear { get; set; }
+    [SupplyParameterFromQuery(Name = "viewAll")] public bool ViewAll { get; set; }
+    [SupplyParameterFromQuery(Name = "start")] public DateTime? StartDateQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "stop")] public DateTime? StopDateQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "state")] public string? StateQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "region")] public string? RegionQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "mode")] public string? ModeQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "size")] public string? SizeQuery { get; set; }
+
+    // ---- DEMO model (you already have this) ----
+    private record SurveyRow(
+    int Id,
+    DateTime SurveyDate,
+    string Title,
+    string OmbNumber,
+    DateTime OmbExpires,
+    string SampleName,
+    DateTime StartDate,
+    DateTime StopDate,
+    string Status,
+    string State,
+    string Region,
+    string Mode
+    );
+
+    // ---- Your list (keep your seed rows + generator) ----
+    private List<SurveyRow> SurveyRows = new()
+    {
+        new(312, new DateTime(2025, 11, 01), "PLACEMENT OF PULLET CHICKS FOR HATCHERY SUPPLY FLOCKS", "0535-0004",
+        new DateTime(2027, 11, 30), "316-PULLET PLACEMENTS",
+        new DateTime(2025, 11, 01), new DateTime(2025, 12, 15), "In progress", "IA", "NWR", "CAWI"),
+
+        new(1001, new DateTime(2026, 01, 05), "Crop Yield Survey (CY-2026)", "0535-0123",
+        new DateTime(2028, 06, 30), "CY-2026 Core Sample",
+        new DateTime(2026, 01, 05), new DateTime(2026, 03, 31), "Not started", "IA", "UMR", "CAPI"),
+
+        new(1002, new DateTime(2026, 01, 08), "Agricultural Census Pilot (ACP)", "0535-0456",
+        new DateTime(2027, 09, 30), "ACP Pilot Frame",
+        new DateTime(2026, 01, 10), new DateTime(2026, 02, 28), "Blocked", "AZ", "MTR", "CATI"),
+
+        new(1003, new DateTime(2026, 01, 11), "Farm Labor Study (FLS)", "0535-0789",
+        new DateTime(2029, 01, 31), "FLS 2026 Sample",
+        new DateTime(2026, 01, 15), new DateTime(2026, 04, 15), "In progress", "OR", "PCR", "CAWI"),
+
+        new(1004, new DateTime(2026, 01, 15), "Dairy Inventory Survey (DIS)", "0535-0321",
+        new DateTime(2027, 12, 31), "DIS Monthly Frame",
+        new DateTime(2026, 01, 01), new DateTime(2026, 01, 31), "Overdue", "WI", "GLR", "CAPI"),
+
+        new(1107, new DateTime(2026, 02, 01), "Producer Price Index (PPI) Follow-up", "0535-0555",
+        new DateTime(2028, 03, 31), "PPI Follow-up List",
+        new DateTime(2026, 02, 01), new DateTime(2026, 02, 20), "Not started", "NY", "NER", "CATI"),
+
+        new(1209, new DateTime(2026, 02, 10), "Irrigation & Water Use (IWU)", "0535-0666",
+        new DateTime(2028, 10, 31), "IWU Stratified Sample",
+        new DateTime(2026, 02, 12), new DateTime(2026, 05, 01), "In progress", "TX", "SPR", "CAPI"),
+
+        new(1302, new DateTime(2026, 03, 01), "Organic Production Survey (OPS)", "0535-0777",
+        new DateTime(2029, 05, 31), "OPS Recontact Frame",
+        new DateTime(2026, 03, 01), new DateTime(2026, 06, 15), "Not started", "NC", "EMR", "CAWI"),
+    };
+
+    // ---- toolbar state ----
+    private string SearchText { get; set; } = "";
+    private bool ShowFilters { get; set; } = false;
+    private HashSet<string> YearSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
+    private DateTime? StartDateFilter { get; set; }
+    private DateTime? StopDateFilter { get; set; }
+
+    private readonly List<string> Regions = new() { "SOR", "NWR", "MTR", "DLR", "PCR", "NER", "EMR", "HLR", "GLR", "UMR", "NPR", "SPR" };
+    private readonly List<string> States = new()
+    {
+        "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL",
+        "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME",
+        "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH",
+        "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI",
+        "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", "PR"
+    };
+    private readonly List<string> Modes = new() { "CAWI", "CATI", "CAPI", "Paper" };
+    private readonly List<string> StatusOptions = new() { "Not started", "In progress", "Blocked", "Overdue" };
+
+    private HashSet<string> StateSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> RegionSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> ModeSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> StatusSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    // ---- paging ----
+    private int PageIndex { get; set; } = 0;
+    private int PageSize { get; set; } = 10; // default
+    private string PageSizeString { get; set; } = "10";
+
+    protected override void OnInitialized()
+    {
+        GenerateAdditionalSurveys(100);
+        PageSizeString = PageSize == 0 ? "All" : PageSize.ToString(); // will be "10"
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (ViewAll)
+        {
+            SearchText = "";
+            YearSelections.Clear();
+            StartDateFilter = null;
+            StopDateFilter = null;
+            StateSelections.Clear();
+            RegionSelections.Clear();
+            ModeSelections.Clear();
+            StatusSelections.Clear();
+        }
+
+        if (!string.IsNullOrWhiteSpace(Query))
+        {
+            SearchText = Query.Trim();
+        }
+
+        StatusSelections.Clear();
+        StatusSelections.UnionWith(ParseCsv(QueryStatus));
+
+        YearSelections.Clear();
+        YearSelections.UnionWith(ParseCsv(QueryYear));
+
+        if (StartDateQuery.HasValue)
+        {
+            StartDateFilter = StartDateQuery;
+        }
+
+        if (StopDateQuery.HasValue)
+        {
+            StopDateFilter = StopDateQuery;
+        }
+
+        StateSelections.Clear();
+        StateSelections.UnionWith(ParseCsv(StateQuery));
+
+        RegionSelections.Clear();
+        RegionSelections.UnionWith(ParseCsv(RegionQuery));
+
+        ModeSelections.Clear();
+        ModeSelections.UnionWith(ParseCsv(ModeQuery));
+
+        if (!string.IsNullOrWhiteSpace(SizeQuery))
+        {
+            PageSizeString = SizeQuery;
+            OnPageSizeChanged();
+        }
+    }
+
+    // Recompute on every render (fine for demo sizes)
+    private List<SurveyRow> FilteredRows => ApplySurveyFilters().ToList();
+
+    private IEnumerable<SurveyRow> PagedRows
+    {
+        get
+        {
+            var rows = FilteredRows;
+
+            if (PageSize <= 0) return rows;
+
+            // clamp PageIndex if filters shrink results
+            var maxPage = Math.Max(0, (int)Math.Ceiling(rows.Count / (double)PageSize) - 1);
+            if (PageIndex > maxPage) PageIndex = maxPage;
+
+            return rows.Skip(PageIndex * PageSize).Take(PageSize);
+        }
+    }
+
+    private string PageSummary
+    {
+        get
+        {
+            var total = FilteredRows.Count;
+            if (total == 0) return "0 results";
+
+            if (PageSize <= 0) return $"1–{total} of {total}";
+
+            var start = PageIndex * PageSize + 1;
+            var end = Math.Min(total, (PageIndex + 1) * PageSize);
+            return $"{start}–{end} of {total}";
+        }
+    }
+
+    private bool IsPrevDisabled => PageIndex <= 0 || PageSize <= 0;
+    private bool IsNextDisabled
+    {
+        get
+        {
+            if (PageSize <= 0) return true;
+            var total = FilteredRows.Count;
+            return (PageIndex + 1) * PageSize >= total;
+        }
+    }
+
+    private void PrevPage()
+    {
+        if (PageIndex > 0) PageIndex--;
+    }
+
+    private void NextPage()
+    {
+        if (!IsNextDisabled) PageIndex++;
+    }
+
+    private void OnPageSizeChanged()
+    {
+        // reset to first page whenever page size changes
+        PageIndex = 0;
+
+        PageSizeString = PageSizeString?.Trim() ?? "20";
+        if (PageSizeString.Equals("All", StringComparison.OrdinalIgnoreCase))
+        {
+            PageSize = 0; // 0 means ALL
+        }
+        else if (!int.TryParse(PageSizeString, out var n) || n <= 0)
+        {
+            PageSize = 20;
+            PageSizeString = "20";
+        }
+        else
+        {
+            PageSize = n;
+        }
+    }
+
+    private void ToggleFilters() => ShowFilters = !ShowFilters;
+    private void CloseFilters() => ShowFilters = false;
+
+    private void ClearFilters()
+    {
+        StatusSelections.Clear();
+        YearSelections.Clear();
+        SearchText = "";
+        StartDateFilter = null;
+        StopDateFilter = null;
+        StateSelections.Clear();
+        RegionSelections.Clear();
+        ModeSelections.Clear();
+        PageIndex = 0;
+    }
+
+
+    private IEnumerable<string> Years =>
+    SurveyRows.Select(s => s.SurveyDate.Year.ToString())
+    .Distinct()
+    .OrderByDescending(y => y);
+
+    private IEnumerable<SurveyRow> ApplySurveyFilters()
+    {
+        // ✅ key fix: SurveyRows (your list), NOT Surveys
+        IEnumerable<SurveyRow> q = SurveyRows;
+
+        // search
+        if (!string.IsNullOrWhiteSpace(SearchText))
+        {
+            var t = SearchText.Trim().ToLowerInvariant();
+            q = q.Where(s =>
+            s.Id.ToString().Contains(t) ||
+            s.Title.ToLowerInvariant().Contains(t) ||
+            s.OmbNumber.ToLowerInvariant().Contains(t) ||
+            s.SampleName.ToLowerInvariant().Contains(t));
+        }
+
+        if (StatusSelections.Count > 0)
+        {
+            q = q.Where(s => StatusSelections.Contains(s.Status));
+        }
+
+        if (YearSelections.Count > 0)
+        {
+            var yearInts = YearSelections
+                .Select(y => int.TryParse(y, out var parsed) ? parsed : (int?)null)
+                .Where(y => y.HasValue)
+                .Select(y => y!.Value)
+                .ToHashSet();
+
+            if (yearInts.Count > 0)
+                q = q.Where(s => yearInts.Contains(s.SurveyDate.Year));
+        }
+
+        if (StartDateFilter.HasValue)
+        {
+            q = q.Where(s => s.StartDate.Date >= StartDateFilter.Value.Date);
+        }
+
+        if (StopDateFilter.HasValue)
+        {
+            q = q.Where(s => s.StopDate.Date <= StopDateFilter.Value.Date);
+        }
+
+        if (StateSelections.Count > 0)
+        {
+            q = q.Where(s => StateSelections.Contains(s.State));
+        }
+
+        if (RegionSelections.Count > 0)
+        {
+            q = q.Where(s => RegionSelections.Contains(s.Region));
+        }
+
+        if (ModeSelections.Count > 0)
+        {
+            q = q.Where(s => ModeSelections.Contains(s.Mode));
+        }
+
+        return q.OrderBy(s => s.Id);
+    }
+
+    private static string StatusClass(string status) => status switch
+    {
+        "In progress" => "pill-progress",
+        "Blocked" => "pill-blocked",
+        "Overdue" => "pill-overdue",
+        "Not started" => "pill-notstarted",
+        _ => "pill-notstarted"
+    };
+
+    private void GenerateAdditionalSurveys(int targetCount)
+    {
+        var titles = new[]
+        {
+"Grain Stocks Survey",
+"Livestock Slaughter Report",
+"Hogs and Pigs Survey",
+"Acreage Report",
+"Cotton Objective Yield Survey",
+"Cattle Inventory Survey",
+"Milk Production Survey",
+"Rice Stocks Survey",
+"Vegetable Production Survey",
+"Fruit Chemical Use Survey"
+};
+
+        var statuses = new[] { "Not started", "In progress", "Blocked", "Overdue" };
+        var states = new[] { "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", "PR" };
+        var regions = new[] { "SOR", "NWR", "MTR", "DLR", "PCR", "NER", "EMR", "HLR", "GLR", "UMR", "NPR", "SPR" };
+        var modes = new[] { "CAWI", "CATI", "CAPI", "Paper" };
+
+        int nextId = SurveyRows.Max(s => s.Id) + 1;
+        var rand = new Random(42);
+
+        while (SurveyRows.Count < targetCount)
+        {
+            var title = titles[rand.Next(titles.Length)];
+            var year = rand.Next(2025, 2028);
+
+            var surveyDate = new DateTime(year, rand.Next(1, 13), rand.Next(1, 25));
+            var startDate = surveyDate.AddDays(rand.Next(0, 5));
+            var stopDate = startDate.AddDays(rand.Next(20, 120));
+
+            SurveyRows.Add(new SurveyRow(
+            nextId++,
+            surveyDate,
+            $"{title} ({year})",
+            $"0535-{rand.Next(1000, 9999)}",
+            surveyDate.AddYears(rand.Next(2, 4)),
+            $"{title.Split(' ')[0]} Frame {year}",
+            startDate,
+            stopDate,
+            statuses[rand.Next(statuses.Length)],
+            states[rand.Next(states.Length)],
+            regions[rand.Next(regions.Length)],
+            modes[rand.Next(modes.Length)]
+            ));
+        }
+    }
+
+    private IEnumerable<FilterChip> SelectedFilterChips => BuildFilterChips();
+
+    private IEnumerable<FilterChip> BuildFilterChips()
+    {
+        var chips = new List<FilterChip>();
+
+        if (!string.IsNullOrWhiteSpace(SearchText))
+            chips.Add(new FilterChip(SearchText.Trim(), () => SearchText = ""));
+
+        chips.AddRange(StateSelections.Select(s => new FilterChip(s, () => StateSelections.Remove(s))));
+        chips.AddRange(RegionSelections.Select(r => new FilterChip(r, () => RegionSelections.Remove(r))));
+        chips.AddRange(ModeSelections.Select(m => new FilterChip(m, () => ModeSelections.Remove(m))));
+        chips.AddRange(StatusSelections.Select(s => new FilterChip(s, () => StatusSelections.Remove(s))));
+        chips.AddRange(YearSelections.Select(y => new FilterChip(y, () => YearSelections.Remove(y))));
+
+        if (StartDateFilter.HasValue)
+            chips.Add(new FilterChip(StartDateFilter.Value.ToString("yyyy-MM-dd"), () => StartDateFilter = null));
+
+        if (StopDateFilter.HasValue)
+            chips.Add(new FilterChip(StopDateFilter.Value.ToString("yyyy-MM-dd"), () => StopDateFilter = null));
+
+        if (!string.IsNullOrWhiteSpace(PageSizeString))
+            chips.Add(new FilterChip($"{PageSizeString} results", () =>
+            {
+                PageSizeString = "10";
+                OnPageSizeChanged();
+            }));
+
+        return chips;
+    }
+
+    private sealed record FilterChip(string Label, Action OnRemove);
+
+    private static HashSet<string> ParseCsv(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        return value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(Uri.UnescapeDataString)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static void ToggleSelection(HashSet<string> set, string value, ChangeEventArgs e)
+    {
+        if (e.Value is bool isChecked && isChecked)
+        {
+            set.Add(value);
+        }
+        else
+        {
+            set.Remove(value);
+        }
+    }
+}

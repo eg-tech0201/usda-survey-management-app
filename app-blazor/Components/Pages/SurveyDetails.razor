@@ -1,0 +1,72 @@
+@page "/surveys/details/{SurveyId:int?}"
+
+<h1>Survey Details</h1>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4"><strong>Survey ID:</strong> @SelectedSurvey.Id</div>
+            <div class="col-md-8"><strong>Title:</strong> @SelectedSurvey.Title</div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-md-4"><strong>OMB:</strong> @SelectedSurvey.OmbNumber</div>
+            <div class="col-md-4"><strong>Status:</strong> @SelectedSurvey.Status</div>
+            <div class="col-md-4"><strong>Sample:</strong> @SelectedSurvey.SampleName</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Linked OMB Docket</div>
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-6">
+                <label class="form-label">Approved Dockets</label>
+                <select class="form-select" @bind="SelectedDocketId">
+                    @foreach (var docket in ApprovedDockets)
+                    {
+                        <option value="@docket.DocketId">@docket.DocketId — @docket.Title</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label">Status</label>
+                <div>
+                    <span class="badge bg-success">Approved</span>
+                </div>
+            </div>
+            <div class="col-12 col-md-3">
+                <button class="btn btn-primary w-100" type="button">Save Association</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int? SurveyId { get; set; }
+
+    private record SurveyRow(int Id, string Title, string OmbNumber, string Status, string SampleName);
+    private record DocketRow(string DocketId, string Title, string Status);
+
+    private readonly List<SurveyRow> Surveys = new()
+    {
+        new(1001, "Crop Yield Survey (CY-2026)", "0535-0123", "In progress", "CY-2026 Core Sample"),
+        new(1002, "Agricultural Census Pilot (ACP)", "0535-0456", "Blocked", "ACP Pilot Frame"),
+        new(1003, "Farm Labor Study (FLS)", "0535-0789", "In progress", "FLS 2026 Sample")
+    };
+
+    private readonly List<DocketRow> Dockets = new()
+    {
+        new("OMB-2026-001", "Crop Yield Survey OMB Renewal", "Approved"),
+        new("OMB-2026-099", "Irrigation & Water Use", "Approved"),
+        new("OMB-2026-014", "Agricultural Census Pilot", "Pending")
+    };
+
+    private string SelectedDocketId { get; set; } = "OMB-2026-001";
+
+    private SurveyRow SelectedSurvey =>
+        Surveys.FirstOrDefault(s => s.Id == SurveyId) ?? Surveys.First();
+
+    private IEnumerable<DocketRow> ApprovedDockets =>
+        Dockets.Where(d => d.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase));
+}

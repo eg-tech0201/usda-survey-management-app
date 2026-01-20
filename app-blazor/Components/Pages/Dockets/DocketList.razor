@@ -1,0 +1,172 @@
+@page "/omb-dockets"
+
+<h1>OMB Dockets</h1>
+
+<div class="row g-3 align-items-end mb-3">
+    <div class="col-12 col-lg-4">
+        <label class="form-label">Search</label>
+        <input class="form-control" placeholder="Search by title, OMB #, Survey ID/Name" @bind="SearchText" />
+    </div>
+    <div class="col-6 col-lg-2">
+        <label class="form-label">Status</label>
+        <select class="form-select" @bind="StatusFilter">
+            <option value="">All</option>
+            <option>Draft</option>
+            <option>Pending</option>
+            <option>Approved</option>
+            <option>Expired</option>
+        </select>
+    </div>
+    <div class="col-6 col-lg-2">
+        <label class="form-label">Owner</label>
+        <select class="form-select" @bind="OwnerFilter">
+            <option value="">All</option>
+            @foreach (var owner in Owners)
+            {
+                <option value="@owner">@owner</option>
+            }
+        </select>
+    </div>
+    <div class="col-6 col-lg-2">
+        <label class="form-label">Expiration From</label>
+        <InputDate @bind-Value="ExpirationFrom" class="form-control" />
+    </div>
+    <div class="col-6 col-lg-2">
+        <label class="form-label">Expiration To</label>
+        <InputDate @bind-Value="ExpirationTo" class="form-control" />
+    </div>
+    <div class="col-12 col-lg-3">
+        <label class="form-label">Linked Survey</label>
+        <select class="form-select" @bind="SurveyFilter">
+            <option value="">All</option>
+            @foreach (var survey in SurveyOptions)
+            {
+                <option value="@survey">@survey</option>
+            }
+        </select>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>DocketId</th>
+                <th>Title</th>
+                <th>OMB Number</th>
+                <th>Expiration</th>
+                <th>Status</th>
+                <th>Linked Survey(s)</th>
+                <th>Last Updated</th>
+                <th>Owner</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var docket in FilteredDockets)
+            {
+                <tr>
+                    <td>@docket.DocketId</td>
+                    <td>@docket.Title</td>
+                    <td>@docket.OmbNumber</td>
+                    <td>@docket.ExpirationDate.ToString("yyyy-MM-dd")</td>
+                    <td>
+                        <span class="badge @StatusBadge(docket.Status)">@docket.Status</span>
+                    </td>
+                    <td>@string.Join(", ", docket.LinkedSurveys)</td>
+                    <td>@docket.LastUpdated.ToString("yyyy-MM-dd")</td>
+                    <td>@docket.Owner</td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <NavLink class="btn btn-outline-secondary" href="omb-dockets/details">View</NavLink>
+                            <NavLink class="btn btn-outline-primary" href="omb-dockets/edit">Edit</NavLink>
+                            <button class="btn btn-outline-secondary" type="button">Clone</button>
+                            <button class="btn btn-outline-secondary" type="button">Share</button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private record DocketRow(
+        string DocketId,
+        string Title,
+        string OmbNumber,
+        DateTime ExpirationDate,
+        string Status,
+        List<string> LinkedSurveys,
+        DateTime LastUpdated,
+        string Owner
+    );
+
+    private readonly List<DocketRow> Dockets = new()
+    {
+        new("OMB-2026-001", "Crop Yield Survey OMB Renewal", "0535-0123", new DateTime(2028, 6, 30), "Approved",
+            new List<string> { "1001 Crop Yield" }, new DateTime(2026, 1, 14), "J. Park"),
+        new("OMB-2026-014", "Agricultural Census Pilot", "0535-0456", new DateTime(2027, 9, 30), "Pending",
+            new List<string> { "1002 ACP" }, new DateTime(2026, 1, 12), "M. Lewis"),
+        new("OMB-2025-102", "Farm Labor Study Extension", "0535-0789", new DateTime(2029, 1, 31), "Draft",
+            new List<string> { "1003 FLS" }, new DateTime(2026, 1, 9), "D. Khan"),
+        new("OMB-2025-061", "Dairy Inventory Survey", "0535-0321", new DateTime(2027, 12, 31), "Expired",
+            new List<string> { "1004 DIS" }, new DateTime(2025, 12, 22), "S. Rivera"),
+        new("OMB-2026-099", "Irrigation & Water Use", "0535-0666", new DateTime(2028, 10, 31), "Approved",
+            new List<string> { "1209 IWU", "1302 OPS" }, new DateTime(2026, 1, 16), "A. Chen")
+    };
+
+    private string SearchText { get; set; } = "";
+    private string StatusFilter { get; set; } = "";
+    private string OwnerFilter { get; set; } = "";
+    private string SurveyFilter { get; set; } = "";
+    private DateTime? ExpirationFrom { get; set; }
+    private DateTime? ExpirationTo { get; set; }
+
+    private IEnumerable<string> Owners => Dockets.Select(d => d.Owner).Distinct().OrderBy(o => o);
+    private IEnumerable<string> SurveyOptions => Dockets.SelectMany(d => d.LinkedSurveys).Distinct().OrderBy(s => s);
+
+    private IEnumerable<DocketRow> FilteredDockets
+    {
+        get
+        {
+            IEnumerable<DocketRow> query = Dockets;
+
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var term = SearchText.Trim().ToLowerInvariant();
+                query = query.Where(d =>
+                    d.Title.ToLowerInvariant().Contains(term) ||
+                    d.OmbNumber.ToLowerInvariant().Contains(term) ||
+                    d.LinkedSurveys.Any(s => s.ToLowerInvariant().Contains(term)) ||
+                    d.DocketId.ToLowerInvariant().Contains(term));
+            }
+
+            if (!string.IsNullOrWhiteSpace(StatusFilter))
+                query = query.Where(d => d.Status.Equals(StatusFilter, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrWhiteSpace(OwnerFilter))
+                query = query.Where(d => d.Owner.Equals(OwnerFilter, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrWhiteSpace(SurveyFilter))
+                query = query.Where(d => d.LinkedSurveys.Contains(SurveyFilter));
+
+            if (ExpirationFrom.HasValue)
+                query = query.Where(d => d.ExpirationDate.Date >= ExpirationFrom.Value.Date);
+
+            if (ExpirationTo.HasValue)
+                query = query.Where(d => d.ExpirationDate.Date <= ExpirationTo.Value.Date);
+
+            return query;
+        }
+    }
+
+    private static string StatusBadge(string status) => status switch
+    {
+        "Approved" => "bg-success",
+        "Pending" => "bg-warning text-dark",
+        "Expired" => "bg-secondary",
+        "Draft" => "bg-info text-dark",
+        _ => "bg-light text-dark"
+    };
+}

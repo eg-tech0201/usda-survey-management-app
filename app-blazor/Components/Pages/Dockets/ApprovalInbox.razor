@@ -1,0 +1,63 @@
+@page "/omb-dockets/approvals"
+
+<h1>Approval Inbox</h1>
+
+<p class="text-muted">Pending approvals for OMB Clearance Officer and backup roles.</p>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Docket</th>
+                <th>Survey</th>
+                <th>Submitted By</th>
+                <th>Submitted On</th>
+                <th>Priority</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in PendingApprovals)
+            {
+                <tr>
+                    <td>@item.DocketId</td>
+                    <td>@item.Survey</td>
+                    <td>@item.SubmittedBy</td>
+                    <td>@item.SubmittedOn.ToString("yyyy-MM-dd")</td>
+                    <td><span class="badge @item.PriorityBadge">@item.Priority</span></td>
+                    <td>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-sm btn-success" type="button">Approve</button>
+                            <button class="btn btn-sm btn-danger" type="button">Reject</button>
+                            <button class="btn btn-sm btn-outline-secondary" type="button">Request Changes</button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="6">
+                        <label class="form-label">Comments</label>
+                        <textarea class="form-control" rows="2" placeholder="Add review comments for @item.DocketId"></textarea>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private record ApprovalRow(
+        string DocketId,
+        string Survey,
+        string SubmittedBy,
+        DateTime SubmittedOn,
+        string Priority,
+        string PriorityBadge
+    );
+
+    private readonly List<ApprovalRow> PendingApprovals = new()
+    {
+        new("OMB-2026-014", "1002 ACP", "M. Lewis", new DateTime(2026, 1, 12), "High", "bg-danger"),
+        new("OMB-2025-102", "1003 FLS", "D. Khan", new DateTime(2026, 1, 10), "Medium", "bg-warning text-dark"),
+        new("OMB-2026-099", "1209 IWU", "A. Chen", new DateTime(2026, 1, 16), "Low", "bg-secondary")
+    };
+}
