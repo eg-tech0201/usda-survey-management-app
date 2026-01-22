@@ -1,16 +1,12 @@
 <header class="sms-topbar">
     <div class="sms-topbar-left">
-        <button type="button" class="hamburger" title="Toggle menu" @onclick="ToggleNav">
+        <button type="button" class="hamburger" title="Toggle menu" @onclick="ToggleNavigation">
             <span class="bi bi-list" aria-hidden="true"></span>
         </button>
     </div>
 
-    <div class="sms-topbar-center">
-        <input class="search" placeholder="Search bar (SURVEY ID / NAME)" />
-    </div>
-
     <div class="sms-topbar-right">
-        <button type="button" class="icon-btn" title="Notifications" @onclick="ToggleNotifs">
+        <button type="button" class="icon-button" title="Notifications" @onclick="ToggleNotifs">
             <span class="bi bi-bell" aria-hidden="true"></span>
             @if (NotifCount > 0)
             {
@@ -39,17 +35,17 @@
 }
 
 @code {
-    [Parameter] public string Title { get; set; } = "Dashboard (Home)";
-    [Parameter] public EventCallback OnToggleNav { get; set; }
+    [Parameter] public string Title { get; set; } = "Dashboard";
+    [Parameter] public EventCallback OnToggleNavigation { get; set; }
 
     private bool ShowNotifs;
     private int NotifCount => 4;
 
     private void ToggleNotifs() => ShowNotifs = !ShowNotifs;
 
-    private async Task ToggleNav()
+    private async Task ToggleNavigation()
     {
-        if (OnToggleNav.HasDelegate)
-            await OnToggleNav.InvokeAsync();
+        if (OnToggleNavigation.HasDelegate)
+            await OnToggleNavigation.InvokeAsync();
     }
 }

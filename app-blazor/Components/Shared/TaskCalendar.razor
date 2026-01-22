@@ -1,27 +1,29 @@
 @using System.Globalization
+@using Microsoft.JSInterop
+@inject IJSRuntime Js
 
-<div class="cal-wrap">
-    <div class="cal-toolbar">
-        <div class="cal-left">
-            <button type="button" class="cal-btn" @onclick="Prev">&#8249;</button>
-            <button type="button" class="cal-btn" @onclick="GoToday">Today</button>
-            <button type="button" class="cal-btn" @onclick="Next">&#8250;</button>
+<div class="calendar-wrap" @onclick="ClearSelected">
+    <div class="calendar-toolbar">
+        <div class="calendar-left">
+            <button type="button" class="calendar-button" @onclick="Prev">&#8249;</button>
+            <button type="button" class="calendar-button" @onclick="GoToday">Today</button>
+            <button type="button" class="calendar-button" @onclick="Next">&#8250;</button>
         </div>
 
-        <div class="cal-center">
-            <div class="cal-title">@GetTitle()</div>
+        <div class="calendar-center">
+            <div class="calendar-title">@GetTitle()</div>
         </div>
 
-        <div class="cal-right">
-            <button type="button" class="cal-toggle @(View == CalendarViewMode.Day ? "active" : "")"
+        <div class="calendar-right">
+            <button type="button" class="calendar-toggle @(View == CalendarViewMode.Day ? "active" : "")"
                 @onclick="() => SetView(CalendarViewMode.Day)">
                 Daily
             </button>
-            <button type="button" class="cal-toggle @(View == CalendarViewMode.Week ? "active" : "")"
+            <button type="button" class="calendar-toggle @(View == CalendarViewMode.Week ? "active" : "")"
                 @onclick="() => SetView(CalendarViewMode.Week)">
                 Weekly
             </button>
-            <button type="button" class="cal-toggle @(View == CalendarViewMode.Month ? "active" : "")"
+            <button type="button" class="calendar-toggle @(View == CalendarViewMode.Month ? "active" : "")"
                 @onclick="() => SetView(CalendarViewMode.Month)">
                 Monthly
             </button>
@@ -32,7 +34,7 @@
 
     @if (View == CalendarViewMode.Day)
     {
-        <div class="timegrid">
+        <div class="timegrid" @ref="_dayScroll">
             <div class="timegrid-header">
                 <div></div>
                 <div class="timegrid-title"></div>
@@ -41,15 +43,42 @@
 
             @foreach (var h in Hours)
             {
-                <div class="timegrid-row">
+                <div class="timegrid-row" data-hour="@h">
                     <div class="timegrid-time">@FormatHour(h)</div>
                     <div class="timegrid-slot">
                         @foreach (var ev in GetEventsForDayHour(AnchorDate, h))
                         {
-                            <div class="time-ev @GetEventClass(ev.Status)">
+                            var isSelected = IsSelected(ev);
+                            if (isSelected)
+                            {
+                            <div class="time-ev calendar-event @GetEventClass(ev.Status) selected"
+                                 style="@GetEventStyle(ev)"
+                                 @onclick="() => SelectEvent(ev)" @onclick:stopPropagation="true" @ref="_selectedEventEl">
+                                <div class="time-ev-title">@ev.Title</div>
+                                <div class="time-ev-sub">@ev.Start.ToString("h:mm tt")</div>
+
+                                <div class="calendar-pop" @onclick:stopPropagation="true" @ref="_selectedPopEl">
+                                    <div class="calendar-pop-head">
+                                        <div class="calendar-pop-title">Scheduled task</div>
+                                        <button type="button" class="calendar-pop-close" @onclick="ClearSelected" @onclick:stopPropagation="true">×</button>
+                                        </div>
+                                        <div class="calendar-pop-body">
+                                            <div class="calendar-pop-main">@ev.Title</div>
+                                            <div class="calendar-pop-meta">@ev.Start.ToString("MMM d, yyyy • h:mm tt")</div>
+                                            <span class="calendar-pop-status @GetEventClass(ev.Status)">@ev.Status</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        else
+                        {
+                            <div class="time-ev calendar-event @GetEventClass(ev.Status)"
+                                 style="@GetEventStyle(ev)"
+                                 @onclick="() => SelectEvent(ev)" @onclick:stopPropagation="true">
                                 <div class="time-ev-title">@ev.Title</div>
                                 <div class="time-ev-sub">@ev.Start.ToString("h:mm tt")</div>
                             </div>
+                            }
                         }
                     </div>
                 </div>
@@ -59,27 +88,66 @@
 
     else if (View == CalendarViewMode.Month)
     {
-        <div class="cal-grid cal-month">
+        <div class="calendar-grid calendar-month">
             @foreach (var d in DayHeaders)
             {
-                <div class="cal-head">@d</div>
+                <div class="calendar-head">@d</div>
             }
 
             @foreach (var cell in GetMonthCells())
             {
-                <div class="cal-cell @(cell.IsCurrentMonth ? "" : "muted") @(cell.IsToday ? "today" : "")">
-                    <div class="cal-daynum">@cell.Date.Day</div>
+                <div class="calendar-cell @(cell.IsCurrentMonth ? "" : "muted") @(cell.IsToday ? "today" : "") @(IsSelectedDate(cell.Date) ? "selected-day" : "")">
+                    <div class="calendar-daynum">@cell.Date.Day</div>
 
-                    @foreach (var ev in GetEventsForDate(cell.Date).Take(3))
+                    @{
+                        var dayEvents = GetEventsForDate(cell.Date);
+                        var eventsToShow = dayEvents.Take(3).ToList();
+                        if (SelectedEventId.HasValue)
+                        {
+                            var selected = dayEvents.FirstOrDefault(e => e.Id == SelectedEventId.Value);
+                            if (selected != null && eventsToShow.Count > 0 && !eventsToShow.Contains(selected))
+                            {
+                                eventsToShow[eventsToShow.Count - 1] = selected;
+                            }
+                        }
+                    }
+
+                    @foreach (var ev in eventsToShow)
                     {
-                        <div class="cal-ev @GetEventClass(ev.Status)">@ev.Title</div>
+                        var isSelected = IsSelected(ev);
+                        if (isSelected)
+                        {
+                            <div class="calendar-ev calendar-event @GetEventClass(ev.Status) selected"
+                                 @onclick="() => SelectEvent(ev)" @onclick:stopPropagation="true" @ref="_selectedEventEl">
+                                @ev.Title
+
+                                <div class="calendar-pop" @onclick:stopPropagation="true" @ref="_selectedPopEl">
+                                    <div class="calendar-pop-head">
+                                        <div class="calendar-pop-title">Scheduled task</div>
+                                        <button type="button" class="calendar-pop-close" @onclick="ClearSelected" @onclick:stopPropagation="true">×</button>
+                                    </div>
+                                    <div class="calendar-pop-body">
+                                        <div class="calendar-pop-main">@ev.Title</div>
+                                        <div class="calendar-pop-meta">@ev.Start.ToString("MMM d, yyyy • h:mm tt")</div>
+                                        <span class="calendar-pop-status @GetEventClass(ev.Status)">@ev.Status</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="calendar-ev calendar-event @GetEventClass(ev.Status)"
+                                 @onclick="() => SelectEvent(ev)" @onclick:stopPropagation="true">
+                                @ev.Title
+                            </div>
+                        }
                     }
 
                     @{
-                        var extra = GetEventsForDate(cell.Date).Count - 3;
+                        var extra = dayEvents.Count - 3;
                         if (extra > 0)
                         {
-                            <div class="cal-more">+@extra more</div>
+                            <div class="calendar-more">+@extra more</div>
                         }
                     }
                 </div>
@@ -90,7 +158,7 @@
     {
         var days = GetWeekDays();
 
-        <div class="weekgrid">
+        <div class="weekgrid" @ref="_weekScroll">
             <div class="weekgrid-header">
                 <div class="weekgrid-corner"></div>
                 @foreach (var d in days)
@@ -101,7 +169,7 @@
 
             @foreach (var h in Hours)
             {
-                <div class="weekgrid-row">
+                <div class="weekgrid-row" data-hour="@h">
                     <div class="weekgrid-time">@FormatHour(h)</div>
 
                     @foreach (var d in days)
@@ -109,9 +177,35 @@
                         <div class="weekgrid-cell">
                             @foreach (var ev in GetEventsForDayHour(d, h))
                             {
-                                <div class="week-ev @GetEventClass(ev.Status)">
-                                    @ev.Title
-                                </div>
+                                var isSelected = IsSelected(ev);
+                                if (isSelected)
+                                {
+                                    <div class="week-ev calendar-event @GetEventClass(ev.Status) selected"
+                                         style="@GetEventStyle(ev)"
+                                         @onclick="() => SelectEvent(ev)" @onclick:stopPropagation="true" @ref="_selectedEventEl">
+                                        @ev.Title
+
+                                        <div class="calendar-pop" @onclick:stopPropagation="true" @ref="_selectedPopEl">
+                                            <div class="calendar-pop-head">
+                                                <div class="calendar-pop-title">Scheduled task</div>
+                                                <button type="button" class="calendar-pop-close" @onclick="ClearSelected" @onclick:stopPropagation="true">×</button>
+                                            </div>
+                                            <div class="calendar-pop-body">
+                                                <div class="calendar-pop-main">@ev.Title</div>
+                                                <div class="calendar-pop-meta">@ev.Start.ToString("MMM d, yyyy • h:mm tt")</div>
+                                                <span class="calendar-pop-status @GetEventClass(ev.Status)">@ev.Status</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="week-ev calendar-event @GetEventClass(ev.Status)"
+                                         style="@GetEventStyle(ev)"
+                                         @onclick="() => SelectEvent(ev)" @onclick:stopPropagation="true">
+                                        @ev.Title
+                                    </div>
+                                }
                             }
                         </div>
                     }
@@ -135,9 +229,73 @@
 
     public class CalendarEvent
     {
+        public int Id { get; set; }
         public DateTime Start { get; set; }
         public string Title { get; set; } = "";
         public string Status { get; set; } = "";
+    }
+
+    [Parameter] public int? SelectedEventId { get; set; }
+    [Parameter] public EventCallback<int?> SelectedEventIdChanged { get; set; }
+
+    private ElementReference _dayScroll;
+    private ElementReference _weekScroll;
+    private ElementReference _selectedEventEl;
+    private ElementReference _selectedPopEl;
+    private int? _lastSelectedEventId;
+    private bool _pendingScroll;
+    private bool _pendingScrollToHour;
+
+    protected override void OnParametersSet()
+    {
+        if (SelectedEventId != _lastSelectedEventId)
+        {
+            _pendingScroll = SelectedEventId.HasValue;
+            _lastSelectedEventId = SelectedEventId;
+        }
+
+        if (SelectedEventId.HasValue)
+        {
+            var selected = Events.FirstOrDefault(e => e.Id == SelectedEventId.Value);
+            if (selected != null)
+            {
+                AnchorDate = View == CalendarViewMode.Week
+                    ? GetWeekStart(selected.Start)
+                    : selected.Start.Date;
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_pendingScroll || !SelectedEventId.HasValue)
+        {
+            if (firstRender && (View == CalendarViewMode.Day || View == CalendarViewMode.Week))
+            {
+                await ScrollToWorkdayStart();
+            }
+        }
+        else
+        {
+            if (View == CalendarViewMode.Day)
+            {
+                await Js.InvokeVoidAsync("smsScrollToEvent", _dayScroll, _selectedEventEl);
+                _pendingScroll = false;
+            }
+            else if (View == CalendarViewMode.Week)
+            {
+                await Js.InvokeVoidAsync("smsScrollToEvent", _weekScroll, _selectedEventEl);
+                _pendingScroll = false;
+            }
+
+            await Js.InvokeVoidAsync("smsPositionPopover", _selectedEventEl, _selectedPopEl);
+        }
+
+        if (_pendingScrollToHour && !SelectedEventId.HasValue && (View == CalendarViewMode.Day || View == CalendarViewMode.Week))
+        {
+            await ScrollToWorkdayStart();
+            _pendingScrollToHour = false;
+        }
     }
 
     private async Task SetView(CalendarViewMode mode)
@@ -149,6 +307,17 @@
         // Optional: snap to Monday when switching to Week
         if (mode == CalendarViewMode.Week)
             AnchorDate = GetWeekStart(AnchorDate);
+        else if (SelectedEventId.HasValue)
+        {
+            var selected = Events.FirstOrDefault(e => e.Id == SelectedEventId.Value);
+            if (selected != null)
+                AnchorDate = selected.Start.Date;
+        }
+
+        if (SelectedEventId.HasValue && (mode == CalendarViewMode.Day || mode == CalendarViewMode.Week))
+            _pendingScroll = true;
+        else if (mode == CalendarViewMode.Day || mode == CalendarViewMode.Week)
+            _pendingScrollToHour = true;
     }
 
     private string GetEventClass(string status) => status switch
@@ -182,6 +351,36 @@
             CalendarViewMode.Month => AnchorDate.AddMonths(1),
             _ => AnchorDate
         };
+    }
+
+    private bool IsSelected(CalendarEvent ev) =>
+        SelectedEventId.HasValue && ev.Id == SelectedEventId.Value;
+
+    private async Task SelectEvent(CalendarEvent ev)
+    {
+        SelectedEventId = ev.Id;
+        _pendingScroll = true;
+        if (SelectedEventIdChanged.HasDelegate)
+            await SelectedEventIdChanged.InvokeAsync(SelectedEventId);
+    }
+
+    private async Task ClearSelected()
+    {
+        SelectedEventId = null;
+        _pendingScroll = false;
+        if (SelectedEventIdChanged.HasDelegate)
+            await SelectedEventIdChanged.InvokeAsync(null);
+    }
+
+    private bool IsSelectedDate(DateTime date) =>
+        SelectedEventId.HasValue && Events.Any(e => e.Id == SelectedEventId.Value && e.Start.Date == date.Date);
+
+    private async Task ScrollToWorkdayStart()
+    {
+        if (View == CalendarViewMode.Day)
+            await Js.InvokeVoidAsync("smsScrollToHour", _dayScroll, 9);
+        else if (View == CalendarViewMode.Week)
+            await Js.InvokeVoidAsync("smsScrollToHour", _weekScroll, 9);
     }
 
     private string GetTitle()
@@ -258,4 +457,10 @@
     .Where(e => e.Start.Date == day.Date && e.Start.Hour == hour)
     .OrderBy(e => e.Start)
     .ToList();
+
+    private string GetEventStyle(CalendarEvent ev)
+    {
+        var offset = Math.Clamp(ev.Start.Minute / 60.0, 0, 0.99);
+        return $"--event-offset:{offset:0.##}";
+    }
 }

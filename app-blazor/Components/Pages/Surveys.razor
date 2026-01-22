@@ -9,17 +9,39 @@
             <div class="filters-backdrop" @onclick="CloseFilters"></div>
         }
         <div class="search-shell">
+            <button class="search-icon-button" type="submit" title="Search">
+                <span class="bi bi-search" aria-hidden="true"></span>
+            </button>
             <input class="survey-search search-input" placeholder="Search survey list (ID / title / OMB / sample)…" @bind="SearchText"
-                   @bind:event="oninput" />
+                   @bind:event="oninput" @onfocus="OpenFiltersFromSearch" />
 
-            <button class="search-filter-btn" type="button" @onclick="ToggleFilters" title="Filters">
+            <button class="search-filter-button" type="button" @onclick="ToggleFilters" title="Filters">
                 <span class="bi bi-sliders" aria-hidden="true"></span>
+                <span class="filter-label">Filters</span>
+                @if (FilterAppliedCount > 0)
+                {
+                    <span class="filter-count">(@FilterAppliedCount)</span>
+                }
             </button>
 
             @if (ShowFilters)
             {
                 <div class="filters-pop" @onclick:stopPropagation="true">
-                    <div class="filters-title">Filters</div>
+                    <div class="filters-header">
+                        <div class="filters-title">Filters</div>
+                        @if (AppliedFilterChips.Any())
+                        {
+                            <div class="filters-chips">
+                                @foreach (var chip in AppliedFilterChips)
+                                {
+                                    <button type="button" class="chip" @onclick="chip.OnRemove">
+                                        <span class="chip-x">×</span>
+                                        <span>@chip.Label</span>
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
 
                     <div class="filters-group">
                         <div class="filters-subtitle">Start Date – Stop Date</div>
@@ -115,8 +137,8 @@
                     </div>
 
                     <div class="filters-actions">
-                        <button class="btn-lite" @onclick="ClearFilters">Clear</button>
-                        <button class="btn-primary" @onclick="() => ShowFilters = false">Done</button>
+                        <button class="button-lite" @onclick="ClearFilters">Clear</button>
+                        <button class="button-primary" @onclick="() => ShowFilters = false">Done</button>
                     </div>
                 </div>
             }
@@ -124,7 +146,7 @@
     </div>
 
     <div class="toolbar-meta">
-        @if (SelectedFilterChips.Any())
+        @if (!ShowFilters && SelectedFilterChips.Any())
         {
             <div class="search-chips">
                 @foreach (var chip in SelectedFilterChips)
@@ -139,13 +161,13 @@
 
         <div class="toolbar-right">
             <div class="pager">
-                <button class="btn-lite" @onclick="PrevPage" disabled="@IsPrevDisabled">‹</button>
+                <button class="button-lite" @onclick="PrevPage" disabled="@IsPrevDisabled">‹</button>
 
                 <span class="pager-text">
                     @PageSummary
                 </span>
 
-                <button class="btn-lite" @onclick="NextPage" disabled="@IsNextDisabled">›</button>
+                <button class="button-lite" @onclick="NextPage" disabled="@IsNextDisabled">›</button>
             </div>
 
             <div class="pagesize">
@@ -290,6 +312,7 @@
     private int PageIndex { get; set; } = 0;
     private int PageSize { get; set; } = 10; // default
     private string PageSizeString { get; set; } = "10";
+    private bool PageSizeTouched { get; set; }
 
     protected override void OnInitialized()
     {
@@ -309,6 +332,9 @@
             RegionSelections.Clear();
             ModeSelections.Clear();
             StatusSelections.Clear();
+            PageSizeTouched = false;
+            PageSize = 10;
+            PageSizeString = "10";
         }
 
         if (!string.IsNullOrWhiteSpace(Query))
@@ -345,6 +371,7 @@
         {
             PageSizeString = SizeQuery;
             OnPageSizeChanged();
+            PageSizeTouched = true;
         }
     }
 
@@ -407,6 +434,7 @@
     {
         // reset to first page whenever page size changes
         PageIndex = 0;
+        PageSizeTouched = true;
 
         PageSizeString = PageSizeString?.Trim() ?? "20";
         if (PageSizeString.Equals("All", StringComparison.OrdinalIgnoreCase))
@@ -426,6 +454,7 @@
 
     private void ToggleFilters() => ShowFilters = !ShowFilters;
     private void CloseFilters() => ShowFilters = false;
+    private void OpenFiltersFromSearch() => ShowFilters = true;
 
     private void ClearFilters()
     {
@@ -438,6 +467,9 @@
         RegionSelections.Clear();
         ModeSelections.Clear();
         PageIndex = 0;
+        PageSizeTouched = false;
+        PageSize = 10;
+        PageSizeString = "10";
     }
 
 
@@ -566,13 +598,15 @@
         }
     }
 
-    private IEnumerable<FilterChip> SelectedFilterChips => BuildFilterChips();
+    private IEnumerable<FilterChip> SelectedFilterChips => BuildFilterChips(includeSearch: true);
+    private IEnumerable<FilterChip> AppliedFilterChips => BuildFilterChips(includeSearch: false);
+    private int FilterAppliedCount => AppliedFilterChips.Count();
 
-    private IEnumerable<FilterChip> BuildFilterChips()
+    private IEnumerable<FilterChip> BuildFilterChips(bool includeSearch)
     {
         var chips = new List<FilterChip>();
 
-        if (!string.IsNullOrWhiteSpace(SearchText))
+        if (includeSearch && !string.IsNullOrWhiteSpace(SearchText))
             chips.Add(new FilterChip(SearchText.Trim(), () => SearchText = ""));
 
         chips.AddRange(StateSelections.Select(s => new FilterChip(s, () => StateSelections.Remove(s))));
@@ -587,7 +621,7 @@
         if (StopDateFilter.HasValue)
             chips.Add(new FilterChip(StopDateFilter.Value.ToString("yyyy-MM-dd"), () => StopDateFilter = null));
 
-        if (!string.IsNullOrWhiteSpace(PageSizeString))
+        if (PageSizeTouched)
             chips.Add(new FilterChip($"{PageSizeString} results", () =>
             {
                 PageSizeString = "10";

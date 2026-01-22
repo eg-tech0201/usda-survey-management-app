@@ -1,5 +1,5 @@
 @page "/surveys"
-@inject NavigationManager Nav
+@inject NavigationManager Navigation
 
 <h1 class="page-h1">Surveys</h1>
 
@@ -10,17 +10,39 @@
             <div class="filters-backdrop" @onclick="CloseFilters"></div>
         }
         <div class="search-shell">
+            <button class="search-icon-button" type="submit" title="Search">
+                <span class="bi bi-search" aria-hidden="true"></span>
+            </button>
             <input class="survey-search search-input" placeholder="Search survey list (ID / title / OMB / sample)…"
-                   @bind="SearchText" @bind:event="oninput" @onfocus="ShowViewAll" />
+                   @bind="SearchText" @bind:event="oninput" @onfocus="OnSearchFocus" />
 
-            <button class="search-filter-btn" type="button" @onclick="ToggleFilters" title="Filters">
+            <button class="search-filter-button" type="button" @onclick="ToggleFilters" title="Filters">
                 <span class="bi bi-sliders" aria-hidden="true"></span>
+                <span class="filter-label">Filters</span>
+                @if (FilterAppliedCount > 0)
+                {
+                    <span class="filter-count">(@FilterAppliedCount)</span>
+                }
             </button>
 
             @if (ShowFilters)
             {
                 <div class="filters-pop" @onclick:stopPropagation="true">
-                    <div class="filters-title">Filters</div>
+                    <div class="filters-header">
+                        <div class="filters-title">Filters</div>
+                        @if (AppliedFilterChips.Any())
+                        {
+                            <div class="filters-chips">
+                                @foreach (var chip in AppliedFilterChips)
+                                {
+                                    <button type="button" class="chip" @onclick="chip.OnRemove">
+                                        <span class="chip-x">×</span>
+                                        <span>@chip.Label</span>
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
 
                     <div class="filters-group">
                         <div class="filters-subtitle">Start Date – Stop Date</div>
@@ -117,14 +139,14 @@
                     </div>
 
                     <div class="filters-actions">
-                        <button class="btn-lite" type="button" @onclick="ClearFilters">Clear</button>
-                        <button class="btn-primary" type="button" @onclick="() => ShowFilters = false">Done</button>
+                        <button class="button-lite" type="button" @onclick="ClearFilters">Clear</button>
+                        <button class="button-primary" type="button" @onclick="() => ShowFilters = false">Done</button>
                     </div>
                 </div>
             }
         </div>
 
-        @if (SelectedFilterChips.Any())
+        @if (!ShowFilters && SelectedFilterChips.Any())
         {
             <div class="search-chips">
                 @foreach (var chip in SelectedFilterChips)
@@ -140,7 +162,7 @@
 </form>
 
 <div class="search-hint">
-    <button class="btn-lite" type="button" @onclick="ViewAll">View all surveys</button>
+    <button class="button-lite" type="button" @onclick="ViewAll">View all surveys</button>
     <span class="search-hint-text">or type to refine your search.</span>
 </div>
 
@@ -198,18 +220,22 @@
     private HashSet<string> StatusSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> YearSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-    private void ShowViewAll() => ShowViewAllOption = true;
+    private void OnSearchFocus()
+    {
+        ShowViewAllOption = true;
+        ShowFilters = true;
+    }
     private void CloseFilters() => ShowFilters = false;
 
     private void ViewAll()
     {
-        Nav.NavigateTo($"/surveys/results{BuildQuery(includeViewAll: true)}");
+        Navigation.NavigateTo($"/surveys/results{BuildQuery(includeViewAll: true)}");
     }
 
     private void OnSearchSubmit()
     {
         var includeViewAll = string.IsNullOrWhiteSpace(SearchText);
-        Nav.NavigateTo($"/surveys/results{BuildQuery(includeViewAll)}");
+        Navigation.NavigateTo($"/surveys/results{BuildQuery(includeViewAll)}");
     }
 
     private void ToggleFilters() => ShowFilters = !ShowFilters;
@@ -226,13 +252,15 @@
         YearSelections.Clear();
     }
 
-    private IEnumerable<FilterChip> SelectedFilterChips => BuildFilterChips();
+    private IEnumerable<FilterChip> SelectedFilterChips => BuildFilterChips(includeSearch: true);
+    private IEnumerable<FilterChip> AppliedFilterChips => BuildFilterChips(includeSearch: false);
+    private int FilterAppliedCount => AppliedFilterChips.Count();
 
-    private IEnumerable<FilterChip> BuildFilterChips()
+    private IEnumerable<FilterChip> BuildFilterChips(bool includeSearch)
     {
         var chips = new List<FilterChip>();
 
-        if (!string.IsNullOrWhiteSpace(SearchText))
+        if (includeSearch && !string.IsNullOrWhiteSpace(SearchText))
             chips.Add(new FilterChip(SearchText.Trim(), () => SearchText = ""));
 
         chips.AddRange(StateSelections.Select(s => new FilterChip(s, () => StateSelections.Remove(s))));

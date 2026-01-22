@@ -4,7 +4,7 @@
 
 .panel {
     border-radius: 16px;
-    background: var(--brand-bg);
+    background: var(--brand-background);
     padding: 0.9rem;
 }
 
