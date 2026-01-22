@@ -34,7 +34,7 @@
 
     @if (View == CalendarViewMode.Day)
     {
-        <div class="timegrid" @ref="_dayScroll">
+        <div class="timegrid" @ref="_dayScroll" @onclick:stopPropagation="true">
             <div class="timegrid-header">
                 <div></div>
                 <div class="timegrid-title"></div>
@@ -88,7 +88,7 @@
 
     else if (View == CalendarViewMode.Month)
     {
-        <div class="calendar-grid calendar-month">
+        <div class="calendar-grid calendar-month" @onclick:stopPropagation="true">
             @foreach (var d in DayHeaders)
             {
                 <div class="calendar-head">@d</div>
@@ -158,7 +158,7 @@
     {
         var days = GetWeekDays();
 
-        <div class="weekgrid" @ref="_weekScroll">
+        <div class="weekgrid" @ref="_weekScroll" @onclick:stopPropagation="true">
             <div class="weekgrid-header">
                 <div class="weekgrid-corner"></div>
                 @foreach (var d in days)
@@ -245,12 +245,14 @@
     private int? _lastSelectedEventId;
     private bool _pendingScroll;
     private bool _pendingScrollToHour;
+    private bool _pendingPopoverPosition;
 
     protected override void OnParametersSet()
     {
         if (SelectedEventId != _lastSelectedEventId)
         {
             _pendingScroll = SelectedEventId.HasValue;
+            _pendingPopoverPosition = SelectedEventId.HasValue;
             _lastSelectedEventId = SelectedEventId;
         }
 
@@ -289,6 +291,13 @@
             }
 
             await Js.InvokeVoidAsync("smsPositionPopover", _selectedEventEl, _selectedPopEl);
+            _pendingPopoverPosition = false;
+        }
+
+        if (_pendingPopoverPosition && SelectedEventId.HasValue)
+        {
+            await Js.InvokeVoidAsync("smsPositionPopover", _selectedEventEl, _selectedPopEl);
+            _pendingPopoverPosition = false;
         }
 
         if (_pendingScrollToHour && !SelectedEventId.HasValue && (View == CalendarViewMode.Day || View == CalendarViewMode.Week))
@@ -315,7 +324,10 @@
         }
 
         if (SelectedEventId.HasValue && (mode == CalendarViewMode.Day || mode == CalendarViewMode.Week))
+        {
             _pendingScroll = true;
+            _pendingPopoverPosition = true;
+        }
         else if (mode == CalendarViewMode.Day || mode == CalendarViewMode.Week)
             _pendingScrollToHour = true;
     }
@@ -360,6 +372,7 @@
     {
         SelectedEventId = ev.Id;
         _pendingScroll = true;
+        _pendingPopoverPosition = true;
         if (SelectedEventIdChanged.HasDelegate)
             await SelectedEventIdChanged.InvokeAsync(SelectedEventId);
     }
@@ -368,6 +381,9 @@
     {
         SelectedEventId = null;
         _pendingScroll = false;
+        _pendingPopoverPosition = false;
+        if (View == CalendarViewMode.Day || View == CalendarViewMode.Week)
+            _pendingScrollToHour = true;
         if (SelectedEventIdChanged.HasDelegate)
             await SelectedEventIdChanged.InvokeAsync(null);
     }
