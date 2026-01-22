@@ -1,5 +1,6 @@
 @page "/surveys"
 @inject NavigationManager Navigation
+@inject IJSRuntime Js
 
 <h1 class="page-h1">Surveys</h1>
 
@@ -9,12 +10,12 @@
         {
             <div class="filters-backdrop" @onclick="CloseFilters"></div>
         }
-        <div class="search-shell">
+        <div class="search-shell" @ref="_filtersAnchor">
             <button class="search-icon-button" type="submit" title="Search">
                 <span class="bi bi-search" aria-hidden="true"></span>
             </button>
             <input class="survey-search search-input" placeholder="Search survey list (ID / title / OMB / sample)…"
-                   @bind="SearchText" @bind:event="oninput" @onfocus="OnSearchFocus" />
+                   @bind="SearchText" @bind:event="oninput" @ref="_searchInput" />
 
             <button class="search-filter-button" type="button" @onclick="ToggleFilters" title="Filters">
                 <span class="bi bi-sliders" aria-hidden="true"></span>
@@ -27,7 +28,7 @@
 
             @if (ShowFilters)
             {
-                <div class="filters-pop" @onclick:stopPropagation="true">
+                <div class="filters-pop" @onclick:stopPropagation="true" @ref="_filtersPop">
                     <div class="filters-header">
                         <div class="filters-title">Filters</div>
                         @if (AppliedFilterChips.Any())
@@ -140,24 +141,11 @@
 
                     <div class="filters-actions">
                         <button class="button-lite" type="button" @onclick="ClearFilters">Clear</button>
-                        <button class="button-primary" type="button" @onclick="() => ShowFilters = false">Done</button>
+                        <button class="button-primary" type="button" @onclick="CloseFilters">Done</button>
                     </div>
                 </div>
             }
         </div>
-
-        @if (!ShowFilters && SelectedFilterChips.Any())
-        {
-            <div class="search-chips">
-                @foreach (var chip in SelectedFilterChips)
-                {
-                    <button type="button" class="chip" @onclick="chip.OnRemove">
-                        <span class="chip-x">×</span>
-                        <span>@chip.Label</span>
-                    </button>
-                }
-            </div>
-        }
     </div>
 </form>
 
@@ -194,8 +182,10 @@
 
 @code {
     private string SearchText { get; set; } = "";
-    private bool ShowViewAllOption { get; set; }
     private bool ShowFilters { get; set; }
+    private ElementReference _searchInput;
+    private ElementReference _filtersAnchor;
+    private ElementReference _filtersPop;
     private DateTime? StartDateFilter { get; set; }
     private DateTime? StopDateFilter { get; set; }
     private string ResultsSize { get; set; } = "";
@@ -220,12 +210,17 @@
     private HashSet<string> StatusSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> YearSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-    private void OnSearchFocus()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        ShowViewAllOption = true;
-        ShowFilters = true;
+        if (ShowFilters)
+            await Js.InvokeVoidAsync("smsPositionFilterPopover", _filtersAnchor, _filtersPop);
     }
-    private void CloseFilters() => ShowFilters = false;
+
+    private async Task CloseFilters()
+    {
+        ShowFilters = false;
+        await FocusSearchInput();
+    }
 
     private void ViewAll()
     {
@@ -238,7 +233,14 @@
         Navigation.NavigateTo($"/surveys/results{BuildQuery(includeViewAll)}");
     }
 
-    private void ToggleFilters() => ShowFilters = !ShowFilters;
+    private async Task ToggleFilters()
+    {
+        ShowFilters = !ShowFilters;
+        if (!ShowFilters)
+        {
+            await FocusSearchInput();
+        }
+    }
 
     private void ClearFilters()
     {
@@ -252,16 +254,12 @@
         YearSelections.Clear();
     }
 
-    private IEnumerable<FilterChip> SelectedFilterChips => BuildFilterChips(includeSearch: true);
-    private IEnumerable<FilterChip> AppliedFilterChips => BuildFilterChips(includeSearch: false);
+    private IEnumerable<FilterChip> AppliedFilterChips => BuildFilterChips();
     private int FilterAppliedCount => AppliedFilterChips.Count();
 
-    private IEnumerable<FilterChip> BuildFilterChips(bool includeSearch)
+    private IEnumerable<FilterChip> BuildFilterChips()
     {
         var chips = new List<FilterChip>();
-
-        if (includeSearch && !string.IsNullOrWhiteSpace(SearchText))
-            chips.Add(new FilterChip(SearchText.Trim(), () => SearchText = ""));
 
         chips.AddRange(StateSelections.Select(s => new FilterChip(s, () => StateSelections.Remove(s))));
         chips.AddRange(RegionSelections.Select(r => new FilterChip(r, () => RegionSelections.Remove(r))));
@@ -279,6 +277,11 @@
             chips.Add(new FilterChip($"{ResultsSize} results", () => ResultsSize = ""));
 
         return chips;
+    }
+
+    private async Task FocusSearchInput()
+    {
+        await Js.InvokeVoidAsync("smsFocusElement", _searchInput);
     }
 
     private sealed record FilterChip(string Label, Action OnRemove);
