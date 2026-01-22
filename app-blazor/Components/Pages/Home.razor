@@ -229,6 +229,9 @@
 
     private string SearchText { get; set; } = "";
     private bool ShowFilters { get; set; }
+    private ElementReference _searchInput;
+    private ElementReference _filtersAnchor;
+    private ElementReference _filtersPop;
     private DateTime? StartDateFilter { get; set; }
     private DateTime? StopDateFilter { get; set; }
     private string ResultsSize { get; set; } = "";
@@ -252,8 +255,7 @@
     private HashSet<string> ModeSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> StatusSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> YearSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
-    private IEnumerable<FilterChip> SelectedFilterChips => BuildFilterChips(includeSearch: true);
-    private IEnumerable<FilterChip> AppliedFilterChips => BuildFilterChips(includeSearch: false);
+    private IEnumerable<FilterChip> AppliedFilterChips => BuildFilterChips();
     private int FilterAppliedCount => AppliedFilterChips.Count();
 
     // DueAt includes the time
@@ -297,9 +299,30 @@
         SelectedEventId = null;
     }
 
-    private void OnSearchFocus() => ShowFilters = true;
-    private void CloseFilters() => ShowFilters = false;
-    private void ToggleFilters() => ShowFilters = !ShowFilters;
+    private async Task CloseFilters()
+    {
+        ShowFilters = false;
+        await FocusSearchInput();
+    }
+    private async Task ToggleFilters()
+    {
+        ShowFilters = !ShowFilters;
+        if (!ShowFilters)
+        {
+            await FocusSearchInput();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (ShowFilters)
+            await Js.InvokeVoidAsync("smsPositionFilterPopover", _filtersAnchor, _filtersPop);
+    }
+
+    private async Task FocusSearchInput()
+    {
+        await Js.InvokeVoidAsync("smsFocusElement", _searchInput);
+    }
 
     private void OnSearchSubmit()
     {
@@ -324,12 +347,9 @@
         YearSelections.Clear();
     }
 
-    private IEnumerable<FilterChip> BuildFilterChips(bool includeSearch)
+    private IEnumerable<FilterChip> BuildFilterChips()
     {
         var chips = new List<FilterChip>();
-
-        if (includeSearch && !string.IsNullOrWhiteSpace(SearchText))
-            chips.Add(new FilterChip(SearchText.Trim(), () => SearchText = ""));
 
         chips.AddRange(StateSelections.Select(s => new FilterChip(s, () => StateSelections.Remove(s))));
         chips.AddRange(RegionSelections.Select(r => new FilterChip(r, () => RegionSelections.Remove(r))));
