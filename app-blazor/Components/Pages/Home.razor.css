@@ -40,6 +40,13 @@
     align-items: start;
 }
 
+.dashboard-left {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+}
+
 .panel {
     border-radius: 14px;
     padding: 0.9rem;
@@ -55,7 +62,6 @@
 }
 
 .dashboard-search {
-    margin-bottom: 1rem;
     position: relative;
 }
 
