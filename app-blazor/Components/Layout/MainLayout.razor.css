@@ -11,7 +11,7 @@
 
 main {
     min-width: 0;
-    background: var(--brand-bg);
+    background: var(--brand-background);
 }
 
 .content {
@@ -24,11 +24,11 @@ main {
 }
 
 /* Collapsed Sidebar */
-.page.nav-collapsed {
+.page.navigation-collapsed {
     grid-template-columns: 0 1fr;
 }
 
-.page.nav-collapsed .sidebar {
+.page.navigation-collapsed .sidebar {
     width: 0;
     padding: 0;
     border: none;

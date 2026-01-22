@@ -16,7 +16,7 @@
     min-height: 92px;
     border: 1px solid transparent;
     background:
-        linear-gradient(var(--panel-bg), var(--panel-bg)) padding-box,
+        linear-gradient(var(--panel-background), var(--panel-background)) padding-box,
         linear-gradient(180deg, rgba(31, 111, 63, 0.55), rgba(11, 43, 75, 0.35)) border-box;
 }
 
@@ -35,8 +35,9 @@
 
 .grid-2 {
     display: grid;
-    grid-template-columns: 1.6fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 1rem;
+    align-items: start;
 }
 
 .panel {
@@ -46,11 +47,289 @@
     /* “gradient border frame” */
     border: 1px solid transparent;
     background:
-        linear-gradient(var(--panel-bg), var(--panel-bg)) padding-box,
+        linear-gradient(var(--panel-background), var(--panel-background)) padding-box,
         var(--usda-border-grad) border-box;
 
     /* subtle glow */
     box-shadow: 0 6px 22px rgba(11, 43, 75, 0.08);
+}
+
+.dashboard-search {
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.dashboard-searchbar {
+    position: relative;
+}
+
+.search-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.search-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--brand-muted);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.search-inline-text {
+    color: var(--brand-muted);
+}
+
+.search-shell {
+    width: 100%;
+    flex: 1 1 auto;
+    position: relative;
+    z-index: 46;
+    padding-right: 0;
+}
+
+.search-input {
+    width: 100%;
+    border: 1px solid transparent;
+    background:
+        linear-gradient(180deg, #ffffff, #f2f8f5) padding-box,
+        linear-gradient(135deg, #0f4f2c, #55b07a 40%, #bfe9cf 70%, #0b2b4b) border-box;
+    border-radius: 999px;
+    padding: 0.95rem 7.5rem 0.95rem 3.4rem;
+    font-weight: 700;
+    color: var(--brand-navy);
+    box-shadow: 0 10px 22px rgba(11, 43, 75, 0.08);
+    transition: box-shadow 160ms ease, border-color 160ms ease;
+    caret-color: var(--brand-green);
+}
+
+.search-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(31, 111, 63, 0.18), 0 10px 26px rgba(11, 43, 75, 0.12);
+}
+
+.search-input::placeholder {
+    color: transparent;
+    background: linear-gradient(90deg, var(--brand-green), var(--brand-navy));
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+.search-filter-button {
+    position: absolute;
+    top: 50%;
+    right: 22px;
+    transform: translateY(-50%);
+    border: 1px solid transparent;
+    background:
+        linear-gradient(180deg, #ffffff, #f2f8f5) padding-box,
+        linear-gradient(135deg, #1f6f3f, #55b07a 50%, #0b2b4b) border-box;
+    border-radius: 999px;
+    height: 38px;
+    padding: 0 0.7rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    color: var(--brand-navy);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.search-icon-button {
+    position: absolute;
+    top: 50%;
+    left: 16px;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    color: var(--brand-navy);
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.filter-label {
+    font-weight: 800;
+}
+
+.filter-count {
+    font-weight: 800;
+    color: var(--brand-muted);
+}
+
+.filter-chip-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    max-width: 200px;
+    overflow: hidden;
+}
+
+.filter-pill {
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    border: 1px solid rgba(11, 43, 75, 0.18);
+    background: #eef1f4;
+    color: var(--brand-navy);
+}
+
+.filters-pop {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 0;
+    width: 100%;
+    background: var(--brand-background);
+    border: 1px solid var(--brand-border);
+    border-radius: 18px;
+    box-shadow: 0 18px 38px rgba(0, 0, 0, 0.16);
+    padding: 1rem;
+    z-index: 50;
+    max-height: 70vh;
+    overflow: auto;
+}
+
+.filters-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 43, 75, 0.08);
+    z-index: 40;
+}
+
+.filters-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.filters-title {
+    font-weight: 900;
+    color: var(--brand-navy);
+}
+
+.filters-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.filters-group {
+    margin-bottom: 0.9rem;
+}
+
+.filters-subtitle {
+    font-weight: 800;
+    color: var(--brand-muted);
+    margin-bottom: 0.45rem;
+}
+
+.filters-inline {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.filters-checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.check-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid var(--brand-border);
+    background: var(--brand-background);
+    font-weight: 700;
+    color: var(--brand-navy);
+    cursor: pointer;
+}
+
+.filters-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 0.75rem;
+}
+
+.search-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.35rem;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: var(--brand-navy);
+    background: #eef1f4;
+    border: 1px solid rgba(11, 43, 75, 0.15);
+    cursor: pointer;
+}
+
+.chip-x {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: #d6dbe2;
+    font-size: 0.9rem;
+    line-height: 1;
+}
+
+.select-lite {
+    border: 1px solid var(--brand-border);
+    background: var(--brand-background);
+    border-radius: 12px;
+    padding: 0.45rem 0.6rem;
+    font-weight: 800;
+    color: var(--brand-navy);
+    accent-color: var(--brand-green);
+}
+
+.button-lite {
+    border: 1px solid var(--brand-border);
+    background: var(--brand-background);
+    border-radius: 12px;
+    padding: 0.5rem 0.75rem;
+    font-weight: 800;
+    color: var(--brand-navy);
+    cursor: pointer;
+}
+
+.button-primary {
+    border: 1px solid color-mix(in srgb, var(--brand-green) 55%, black);
+    background: color-mix(in srgb, var(--brand-green) 14%, white);
+    border-radius: 12px;
+    padding: 0.5rem 0.75rem;
+    font-weight: 800;
+    color: var(--brand-navy);
+    cursor: pointer;
+}
+
+.tasks-panel,
+.calendar-panel {
+    min-width: 0;
 }
 
 .panel-title {
@@ -63,6 +342,11 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 0.92rem;
+}
+
+.table-lite th:nth-child(3),
+.table-lite td:nth-child(3) {
+    white-space: nowrap;
 }
 
 .table-lite th,
@@ -78,23 +362,48 @@
     font-weight: 800;
 }
 
-/* Status pill (less round + centered) */
+.task-row {
+    cursor: pointer;
+    transition: background 120ms ease;
+}
+
+.task-row:hover td {
+    background: color-mix(in srgb, var(--brand-green) 7%, transparent);
+}
+
+.task-row.selected td {
+    background: color-mix(in srgb, var(--brand-navy) 8%, transparent);
+}
+
+.task-link {
+    color: var(--brand-navy);
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.task-link:hover {
+    text-decoration: underline;
+}
+
+.tasks-empty {
+    color: var(--brand-muted);
+    font-style: italic;
+    padding: 0.75rem 0.35rem;
+}
+
+/* Status pill (rounded, bold "button" look) */
+.pill,
 .status-pill {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-
-    padding: 0.3rem 0.65rem;
-    border-radius: 8px;
-    /* less round */
-    line-height: 1;
-    /* keeps text vertically centered */
-    font-size: 0.8rem;
-    font-weight: 800;
-
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    line-height: 1.1;
+    font-size: 0.78rem;
+    font-weight: 900;
     border: 1px solid var(--brand-border);
     white-space: nowrap;
-    min-width: 92px;
     text-align: center;
 }
 

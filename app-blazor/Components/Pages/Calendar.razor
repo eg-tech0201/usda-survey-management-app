@@ -74,7 +74,7 @@
 </div>
 
 @code {
-    private record TaskRow(string Task, string Survey, DateTime DueDate, string Status);
+    private record TaskRow(int Id, string Task, string Survey, DateTime DueDate, string Status);
     private record MilestoneRow(string Title, DateTime HqStart, DateTime HqEnd, DateTime? RfoStart, DateTime? RfoEnd);
 
     private bool IsRfoView { get; set; }
@@ -82,11 +82,11 @@
 
     private readonly List<TaskRow> Tasks = new()
     {
-        new("Finalize survey iteration dates", "1001 Crop Yield", new DateTime(2026, 1, 26, 17, 0, 0), "In progress"),
-        new("Validate status master (pre-publish)", "1002 Ag Census Pilot", new DateTime(2026, 1, 18, 10, 0, 0), "Blocked"),
-        new("Review questionnaire link (instrument)", "1001 Crop Yield", new DateTime(2026, 1, 22, 14, 30, 0), "Not started"),
-        new("Resolve schedule conflict (overlap)", "1004 Dairy Inventory", new DateTime(2026, 1, 17, 9, 0, 0), "Overdue"),
-        new("Confirm CAWI mode dates", "1003 Farm Labor Study", new DateTime(2026, 1, 11, 16, 0, 0), "In progress"),
+        new(1, "Finalize survey iteration dates", "1001 Crop Yield", new DateTime(2026, 1, 26, 17, 0, 0), "In progress"),
+        new(2, "Validate status master (pre-publish)", "1002 Ag Census Pilot", new DateTime(2026, 1, 18, 10, 0, 0), "Blocked"),
+        new(3, "Review questionnaire link (instrument)", "1001 Crop Yield", new DateTime(2026, 1, 22, 14, 30, 0), "Not started"),
+        new(4, "Resolve schedule conflict (overlap)", "1004 Dairy Inventory", new DateTime(2026, 1, 17, 9, 0, 0), "Overdue"),
+        new(5, "Confirm CAWI mode dates", "1003 Farm Labor Study", new DateTime(2026, 1, 11, 16, 0, 0), "In progress"),
     };
 
     private readonly List<MilestoneRow> Milestones = new()
@@ -100,6 +100,7 @@
     private List<TaskCalendar.CalendarEvent> CalendarEvents =>
         Tasks.Select(t => new TaskCalendar.CalendarEvent
         {
+            Id = t.Id,
             Start = t.DueDate,
             Title = $"{t.Survey} — {t.Task}",
             Status = t.Status

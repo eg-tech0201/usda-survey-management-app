@@ -1,12 +1,12 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page @(isNavCollapsed ? "nav-collapsed" : "")">
+<div class="page @(isNavigationCollapsed ? "navigation-collapsed" : "")">
     <aside class="sidebar">
         <NavMenu />
     </aside>
 
     <main>
-        <TopBar Title="Dashboard (Home)" OnToggleNav="ToggleNav" />
+        <TopBar Title="Dashboard" OnToggleNavigation="ToggleNavigation" />
 
         <article class="content">
             @Body
@@ -21,10 +21,10 @@
 </div>
 
 @code {
-    private bool isNavCollapsed;
+    private bool isNavigationCollapsed;
 
-    private void ToggleNav()
+    private void ToggleNavigation()
     {
-        isNavCollapsed = !isNavCollapsed;
+        isNavigationCollapsed = !isNavigationCollapsed;
     }
 }
