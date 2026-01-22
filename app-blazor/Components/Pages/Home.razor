@@ -2,6 +2,7 @@
 @using app_blazor.Components.Shared
 @using static app_blazor.Components.Shared.TaskCalendar
 @inject NavigationManager Navigation
+@inject IJSRuntime Js
 
 <h2 class="page-h2">Dashboard</h2>
 
@@ -14,12 +15,12 @@
                 <div class="filters-backdrop" @onclick="CloseFilters"></div>
             }
             <div class="search-row">
-                <div class="search-shell">
+                <div class="search-shell" @ref="_filtersAnchor">
                     <button class="search-icon-button" type="submit" title="Search">
                         <span class="bi bi-search" aria-hidden="true"></span>
                     </button>
                     <input class="survey-search search-input" placeholder="Search survey list (ID / title / OMB / sample)…"
-                           @bind="SearchText" @bind:event="oninput" @onfocus="OnSearchFocus" />
+                           @bind="SearchText" @bind:event="oninput" @ref="_searchInput" />
 
                     <button class="search-filter-button" type="button" @onclick="ToggleFilters" title="Filters">
                         <span class="bi bi-sliders" aria-hidden="true"></span>
@@ -32,7 +33,7 @@
 
                     @if (ShowFilters)
                     {
-                        <div class="filters-pop" @onclick:stopPropagation="true">
+                        <div class="filters-pop" @onclick:stopPropagation="true" @ref="_filtersPop">
                             <div class="filters-header">
                                 <div class="filters-title">Filters</div>
                                 @if (AppliedFilterChips.Any())
@@ -145,7 +146,7 @@
 
                             <div class="filters-actions">
                                 <button class="button-lite" type="button" @onclick="ClearFilters">Clear</button>
-                                <button class="button-primary" type="button" @onclick="() => ShowFilters = false">Done</button>
+                                <button class="button-primary" type="button" @onclick="CloseFilters">Done</button>
                             </div>
                         </div>
                     }
@@ -157,18 +158,6 @@
                 </div>
             </div>
         </form>
-        @if (!ShowFilters && SelectedFilterChips.Any())
-        {
-            <div class="search-chips">
-                @foreach (var chip in SelectedFilterChips)
-                {
-                    <button type="button" class="chip" @onclick="chip.OnRemove">
-                        <span class="chip-x">×</span>
-                        <span>@chip.Label</span>
-                    </button>
-                }
-            </div>
-        }
     </section>
 
     <div class="grid-2">
