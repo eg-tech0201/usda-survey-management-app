@@ -15,18 +15,11 @@
         </div>
 
         <div class="calendar-right">
-            <button type="button" class="calendar-toggle @(View == CalendarViewMode.Day ? "active" : "")"
-                @onclick="() => SetView(CalendarViewMode.Day)">
-                Daily
-            </button>
-            <button type="button" class="calendar-toggle @(View == CalendarViewMode.Week ? "active" : "")"
-                @onclick="() => SetView(CalendarViewMode.Week)">
-                Weekly
-            </button>
-            <button type="button" class="calendar-toggle @(View == CalendarViewMode.Month ? "active" : "")"
-                @onclick="() => SetView(CalendarViewMode.Month)">
-                Monthly
-            </button>
+            <select class="calendar-select" @onchange="OnViewChanged">
+                <option value="@CalendarViewMode.Day" selected="@(View == CalendarViewMode.Day)">Daily</option>
+                <option value="@CalendarViewMode.Week" selected="@(View == CalendarViewMode.Week)">Weekly</option>
+                <option value="@CalendarViewMode.Month" selected="@(View == CalendarViewMode.Month)">Monthly</option>
+            </select>
         </div>
     </div>
 
@@ -246,6 +239,17 @@
     private bool _pendingScroll;
     private bool _pendingScrollToHour;
     private bool _pendingPopoverPosition;
+
+    private async Task OnViewChanged(ChangeEventArgs e)
+    {
+        if (e.Value is null)
+            return;
+
+        if (Enum.TryParse<CalendarViewMode>(e.Value.ToString(), out var view))
+        {
+            await SetView(view);
+        }
+    }
 
     protected override void OnParametersSet()
     {

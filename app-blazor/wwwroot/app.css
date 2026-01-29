@@ -1,11 +1,12 @@
 :root {
-    /* USDA-inspired brand colors */
+    /* using USDA-inspired brand colors for now; will align to requirements
+    once team receives USDA doc with instructions for specific colors */
     --brand-navy: #0b2b4b;
     --brand-green: #1f6f3f;
     --brand-green-2: #2a8a4a;
 
     /* UI neutrals */
-    --brand-background: #ffffff;
+    --brand-background: #ffffff; /* will be different colors for dev beta versions */
     --brand-surface: #f8f9fa;
     --brand-border: rgba(0, 0, 0, 0.08);
     --brand-muted: #6c757d;
@@ -18,11 +19,27 @@
 
     --usda-border-grad: linear-gradient(180deg, var(--brand-green) 0%, var(--brand-navy) 100%);
     --panel-background: #ffffff;
+    --content-padding-y: 1rem;
+    --content-padding-x: 1.25rem;
 }
 
 html,
 body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+img,
+svg,
+video,
+canvas {
+    max-width: 100%;
+    height: auto;
 }
 
 a,
@@ -76,4 +93,17 @@ h1:focus {
 
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
+}
+
+@media (max-width: 900px) {
+    :root {
+        --content-padding-x: 1rem;
+    }
+}
+
+@media (max-width: 600px) {
+    :root {
+        --content-padding-y: 0.75rem;
+        --content-padding-x: 0.75rem;
+    }
 }

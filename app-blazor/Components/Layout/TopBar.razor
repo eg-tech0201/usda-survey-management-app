@@ -1,8 +1,143 @@
+@inject NavigationManager Navigation
+@inject IJSRuntime Js
+
 <header class="sms-topbar">
     <div class="sms-topbar-left">
         <button type="button" class="hamburger" title="Toggle menu" @onclick="ToggleNavigation">
             <span class="bi bi-list" aria-hidden="true"></span>
         </button>
+    </div>
+
+    <div class="sms-topbar-search" @onclick:stopPropagation="true">
+        <form class="dashboard-searchbar" @onsubmit="OnSearchSubmit" @onsubmit:preventDefault="true">
+            @if (ShowFilters)
+            {
+                <div class="filters-backdrop" @onclick="CloseFilters"></div>
+            }
+            <div class="search-row">
+                <div class="search-shell" @ref="_filtersAnchor">
+                    <button class="search-icon-button" type="submit" title="Search">
+                        <span class="bi bi-search" aria-hidden="true"></span>
+                    </button>
+                    <input class="survey-search search-input" placeholder="Search survey list (ID / title / OMB / sample)…"
+                           @bind="SearchText" @bind:event="oninput" @ref="_searchInput" />
+
+                    <button class="search-filter-button" type="button" @onclick="ToggleFilters" title="Filters">
+                        <span class="bi bi-sliders" aria-hidden="true"></span>
+                        <span class="filter-label">Filters</span>
+                        @if (FilterAppliedCount > 0)
+                        {
+                            <span class="filter-count">(@FilterAppliedCount)</span>
+                        }
+                    </button>
+
+                    @if (ShowFilters)
+                    {
+                        <div class="filters-pop" @onclick:stopPropagation="true" @ref="_filtersPop">
+                            <div class="filters-header">
+                                <div class="filters-title">Filters</div>
+                                @if (AppliedFilterChips.Any())
+                                {
+                                    <div class="filters-chips">
+                                        @foreach (var chip in AppliedFilterChips)
+                                        {
+                                            <button type="button" class="chip" @onclick="chip.OnRemove">
+                                                <span class="chip-x">×</span>
+                                                <span>@chip.Label</span>
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="filters-group">
+                                <div class="filters-subtitle">Start Date – Stop Date</div>
+                                <div class="filters-inline">
+                                    <InputDate class="select-lite" @bind-Value="StartDateFilter" />
+                                    <InputDate class="select-lite" @bind-Value="StopDateFilter" />
+                                </div>
+                            </div>
+
+                            <div class="filters-group">
+                                <div class="filters-subtitle">States</div>
+                                <div class="filters-checks">
+                                    @foreach (var state in States)
+                                    {
+                                        <label class="check-pill">
+                                            <input type="checkbox"
+                                                   checked="@StateSelections.Contains(state)"
+                                                   @onchange="e => ToggleSelection(StateSelections, state, e)" />
+                                            <span>@state</span>
+                                        </label>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="filters-group">
+                                <div class="filters-subtitle">Mode</div>
+                                <div class="filters-checks">
+                                    @foreach (var mode in Modes)
+                                    {
+                                        <label class="check-pill">
+                                            <input type="checkbox"
+                                                   checked="@ModeSelections.Contains(mode)"
+                                                   @onchange="e => ToggleSelection(ModeSelections, mode, e)" />
+                                            <span>@mode</span>
+                                        </label>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="filters-group">
+                                <div class="filters-subtitle">Show # of results</div>
+                                <select class="select-lite" @bind="ResultsSize">
+                                    <option value="">Default</option>
+                                    @foreach (var size in ResultsSizes)
+                                    {
+                                        <option value="@size">@size</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="filters-group">
+                                <div class="filters-subtitle">Status</div>
+                                <div class="filters-checks">
+                                    @foreach (var status in StatusOptions)
+                                    {
+                                        <label class="check-pill">
+                                            <input type="checkbox"
+                                                   checked="@StatusSelections.Contains(status)"
+                                                   @onchange="e => ToggleSelection(StatusSelections, status, e)" />
+                                            <span>@status</span>
+                                        </label>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="filters-group">
+                                <div class="filters-subtitle">Year</div>
+                                <div class="filters-checks">
+                                    @foreach (var y in Years)
+                                    {
+                                        <label class="check-pill">
+                                            <input type="checkbox"
+                                                   checked="@YearSelections.Contains(y)"
+                                                   @onchange="e => ToggleSelection(YearSelections, y, e)" />
+                                            <span>@y</span>
+                                        </label>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="filters-actions">
+                                <button class="button-lite" type="button" @onclick="ClearFilters">Clear</button>
+                                <button class="button-primary" type="button" @onclick="() => ShowFilters = false">Done</button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </form>
     </div>
 
     <div class="sms-topbar-right">
@@ -47,5 +182,162 @@
     {
         if (OnToggleNavigation.HasDelegate)
             await OnToggleNavigation.InvokeAsync();
+    }
+
+    private string SearchText { get; set; } = "";
+    private bool ShowFilters { get; set; }
+    private ElementReference _searchInput;
+    private ElementReference _filtersAnchor;
+    private ElementReference _filtersPop;
+    private DateTime? StartDateFilter { get; set; }
+    private DateTime? StopDateFilter { get; set; }
+    private string ResultsSize { get; set; } = "";
+
+    private readonly List<string> Years = new() { "2027", "2026", "2025" };
+    private readonly List<string> States = new()
+    {
+        "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL",
+        "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME",
+        "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH",
+        "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI",
+        "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", "PR"
+    };
+    private readonly List<string> Modes = new() { "CAWI", "CATI", "CAPI", "Paper" };
+    private readonly List<string> ResultsSizes = new() { "10", "20", "50", "All" };
+    private readonly List<string> StatusOptions = new() { "Not started", "In progress", "Blocked", "Overdue" };
+
+    private HashSet<string> StateSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> ModeSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> StatusSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> YearSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
+    private IEnumerable<FilterChip> AppliedFilterChips => BuildFilterChips();
+    private int FilterAppliedCount => AppliedFilterChips.Count();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (ShowFilters)
+            await Js.InvokeVoidAsync("smsPositionFilterPopover", _filtersAnchor, _filtersPop);
+    }
+
+    private Task CloseFilters()
+    {
+        ShowFilters = false;
+        return Task.CompletedTask;
+    }
+
+    private Task ToggleFilters()
+    {
+        ShowFilters = !ShowFilters;
+        return Task.CompletedTask;
+    }
+
+    private void ClearFilters()
+    {
+        StartDateFilter = null;
+        StopDateFilter = null;
+        StateSelections.Clear();
+        ModeSelections.Clear();
+        ResultsSize = "";
+        StatusSelections.Clear();
+        YearSelections.Clear();
+    }
+
+    private IEnumerable<FilterChip> BuildFilterChips()
+    {
+        var chips = new List<FilterChip>();
+
+        chips.AddRange(StateSelections.Select(s => new FilterChip(s, () => StateSelections.Remove(s))));
+        chips.AddRange(ModeSelections.Select(m => new FilterChip(m, () => ModeSelections.Remove(m))));
+        chips.AddRange(StatusSelections.Select(s => new FilterChip(s, () => StatusSelections.Remove(s))));
+        chips.AddRange(YearSelections.Select(y => new FilterChip(y, () => YearSelections.Remove(y))));
+
+        if (StartDateFilter.HasValue)
+            chips.Add(new FilterChip(StartDateFilter.Value.ToString("yyyy-MM-dd"), () => StartDateFilter = null));
+
+        if (StopDateFilter.HasValue)
+            chips.Add(new FilterChip(StopDateFilter.Value.ToString("yyyy-MM-dd"), () => StopDateFilter = null));
+
+        if (!string.IsNullOrWhiteSpace(ResultsSize))
+            chips.Add(new FilterChip($"{ResultsSize} results", () => ResultsSize = ""));
+
+        return chips;
+    }
+
+    private sealed record FilterChip(string Label, Action OnRemove);
+
+    private Task FocusSearchInput() => Task.CompletedTask;
+
+    private void OnSearchSubmit()
+    {
+        var includeViewAll = string.IsNullOrWhiteSpace(SearchText);
+        Navigation.NavigateTo($"/surveys/results{BuildQuery(includeViewAll)}");
+    }
+
+    private static void ToggleSelection(HashSet<string> set, string value, ChangeEventArgs e)
+    {
+        if (e.Value is bool isChecked && isChecked)
+        {
+            set.Add(value);
+        }
+        else
+        {
+            set.Remove(value);
+        }
+    }
+
+    private string BuildQuery(bool includeViewAll)
+    {
+        var queryParts = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(SearchText))
+        {
+            queryParts.Add($"q={Uri.EscapeDataString(SearchText.Trim())}");
+        }
+
+        if (StartDateFilter.HasValue)
+        {
+            queryParts.Add($"start={StartDateFilter.Value:yyyy-MM-dd}");
+        }
+
+        if (StopDateFilter.HasValue)
+        {
+            queryParts.Add($"stop={StopDateFilter.Value:yyyy-MM-dd}");
+        }
+
+        if (StateSelections.Count > 0)
+        {
+            var encoded = string.Join(",", StateSelections.Select(Uri.EscapeDataString));
+            queryParts.Add($"state={encoded}");
+        }
+
+        if (ModeSelections.Count > 0)
+        {
+            var encoded = string.Join(",", ModeSelections.Select(Uri.EscapeDataString));
+            queryParts.Add($"mode={encoded}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(ResultsSize))
+        {
+            queryParts.Add($"size={Uri.EscapeDataString(ResultsSize)}");
+        }
+
+        if (StatusSelections.Count > 0)
+        {
+            var encoded = string.Join(",", StatusSelections.Select(Uri.EscapeDataString));
+            queryParts.Add($"status={encoded}");
+        }
+
+        if (YearSelections.Count > 0)
+        {
+            var encoded = string.Join(",", YearSelections.Select(Uri.EscapeDataString));
+            queryParts.Add($"year={encoded}");
+        }
+
+        if (includeViewAll)
+        {
+            queryParts.Add("viewAll=true");
+        }
+
+        return queryParts.Count == 0 ? "" : $"?{string.Join("&", queryParts)}";
     }
 }
