@@ -17,6 +17,8 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-width: 0;
+    flex-wrap: wrap;
 }
 
 .calendar-center {
@@ -41,19 +43,20 @@
     border-radius: 12px;
     padding: 0.45rem 0.7rem;
     color: var(--brand-navy);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.calendar-toggle {
+.calendar-select {
     border: 1px solid var(--brand-border);
     background: var(--brand-background);
     border-radius: 12px;
     padding: 0.45rem 0.9rem;
     font-weight: 800;
     color: var(--brand-navy);
-}
-
-.calendar-toggle.active {
-    background: color-mix(in srgb, var(--brand-navy) 7%, transparent);
+    max-width: 100%;
 }
 
 /* ===== Month ===== */
@@ -76,6 +79,9 @@
     color: var(--brand-muted);
     padding: 0.25rem 0.35rem;
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .calendar-cell {
@@ -280,6 +286,8 @@
     white-space: nowrap;
     color: var(--brand-navy);
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .weekgrid-row {

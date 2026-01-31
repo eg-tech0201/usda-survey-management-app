@@ -15,7 +15,7 @@ main {
 }
 
 .content {
-    padding: 1rem 1.25rem;
+    padding: var(--content-padding-y) var(--content-padding-x);
     margin: 0;
 }
 

@@ -4,10 +4,6 @@
 <h1>Survey Timeline</h1>
 
 <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
-    <div class="btn-group" role="group" aria-label="Timeline view">
-        <button class="btn btn-outline-primary @(IsRfoView ? "" : "active")" type="button" @onclick="() => SetView(false)">HQ</button>
-        <button class="btn btn-outline-primary @(IsRfoView ? "active" : "")" type="button" @onclick="() => SetView(true)">RFO</button>
-    </div>
     <div class="form-check form-switch">
         <input class="form-check-input" type="checkbox" id="timelineNotify" checked="@NotificationsEnabled" />
         <label class="form-check-label" for="timelineNotify">Notifications enabled (stub)</label>
@@ -31,13 +27,8 @@
                         <thead class="table-light">
                             <tr>
                                 <th>Milestone</th>
-                                <th>HQ Start</th>
-                                <th>HQ End</th>
-                                @if (IsRfoView)
-                                {
-                                    <th>RFO Start</th>
-                                    <th>RFO End</th>
-                                }
+                                <th>Start</th>
+                                <th>End</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -45,13 +36,8 @@
                             {
                                 <tr>
                                     <td>@milestone.Title</td>
-                                    <td>@milestone.HqStart.ToString("yyyy-MM-dd")</td>
-                                    <td>@milestone.HqEnd.ToString("yyyy-MM-dd")</td>
-                                    @if (IsRfoView)
-                                    {
-                                        <td>@FormatDate(milestone.RfoStart)</td>
-                                        <td>@FormatDate(milestone.RfoEnd)</td>
-                                    }
+                                    <td>@milestone.Start.ToString("yyyy-MM-dd")</td>
+                                    <td>@milestone.End.ToString("yyyy-MM-dd")</td>
                                 </tr>
                             }
                         </tbody>
@@ -64,9 +50,9 @@
             <div class="card-header">Audit / History (stub)</div>
             <div class="card-body">
                 <ul>
-                    <li>RFO start date updated — 2026-01-12</li>
-                    <li>HQ milestone added — 2026-01-10</li>
-                    <li>Reminder sent to regional team — 2026-01-08</li>
+                    <li>Start date updated — 2026-01-12</li>
+                    <li>Milestone added — 2026-01-10</li>
+                    <li>Reminder sent — 2026-01-08</li>
                 </ul>
             </div>
         </div>
@@ -75,9 +61,8 @@
 
 @code {
     private record TaskRow(int Id, string Task, string Survey, DateTime DueDate, string Status);
-    private record MilestoneRow(string Title, DateTime HqStart, DateTime HqEnd, DateTime? RfoStart, DateTime? RfoEnd);
+    private record MilestoneRow(string Title, DateTime Start, DateTime End);
 
-    private bool IsRfoView { get; set; }
     private bool NotificationsEnabled { get; set; } = true;
 
     private readonly List<TaskRow> Tasks = new()
@@ -91,10 +76,10 @@
 
     private readonly List<MilestoneRow> Milestones = new()
     {
-        new("Launch window", new DateTime(2026, 1, 5), new DateTime(2026, 1, 20), new DateTime(2026, 1, 7), new DateTime(2026, 1, 22)),
-        new("Enumerator training", new DateTime(2026, 1, 10), new DateTime(2026, 1, 15), new DateTime(2026, 1, 12), new DateTime(2026, 1, 16)),
-        new("Non-response follow-up", new DateTime(2026, 1, 21), new DateTime(2026, 2, 5), null, null),
-        new("Closeout", new DateTime(2026, 2, 8), new DateTime(2026, 2, 15), new DateTime(2026, 2, 10), new DateTime(2026, 2, 18))
+        new("Launch window", new DateTime(2026, 1, 5), new DateTime(2026, 1, 20)),
+        new("Enumerator training", new DateTime(2026, 1, 10), new DateTime(2026, 1, 15)),
+        new("Non-response follow-up", new DateTime(2026, 1, 21), new DateTime(2026, 2, 5)),
+        new("Closeout", new DateTime(2026, 2, 8), new DateTime(2026, 2, 15))
     };
 
     private List<TaskCalendar.CalendarEvent> CalendarEvents =>
@@ -106,7 +91,4 @@
             Status = t.Status
         }).ToList();
 
-    private void SetView(bool isRfo) => IsRfoView = isRfo;
-
-    private static string FormatDate(DateTime? value) => value.HasValue ? value.Value.ToString("yyyy-MM-dd") : "—";
 }

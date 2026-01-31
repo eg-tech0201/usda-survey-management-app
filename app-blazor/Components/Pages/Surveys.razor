@@ -68,21 +68,6 @@
                     </div>
 
                     <div class="filters-group">
-                        <div class="filters-subtitle">Regions</div>
-                        <div class="filters-checks">
-                            @foreach (var region in Regions)
-                            {
-                                <label class="check-pill">
-                                    <input type="checkbox"
-                                           checked="@RegionSelections.Contains(region)"
-                                           @onchange="e => ToggleSelection(RegionSelections, region, e)" />
-                                    <span>@region</span>
-                                </label>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="filters-group">
                         <div class="filters-subtitle">Mode</div>
                         <div class="filters-checks">
                             @foreach (var mode in Modes)
@@ -216,7 +201,6 @@
     [SupplyParameterFromQuery(Name = "start")] public DateTime? StartDateQuery { get; set; }
     [SupplyParameterFromQuery(Name = "stop")] public DateTime? StopDateQuery { get; set; }
     [SupplyParameterFromQuery(Name = "state")] public string? StateQuery { get; set; }
-    [SupplyParameterFromQuery(Name = "region")] public string? RegionQuery { get; set; }
     [SupplyParameterFromQuery(Name = "mode")] public string? ModeQuery { get; set; }
     [SupplyParameterFromQuery(Name = "size")] public string? SizeQuery { get; set; }
 
@@ -282,7 +266,6 @@
     private DateTime? StartDateFilter { get; set; }
     private DateTime? StopDateFilter { get; set; }
 
-    private readonly List<string> Regions = new() { "SOR", "NWR", "MTR", "DLR", "PCR", "NER", "EMR", "HLR", "GLR", "UMR", "NPR", "SPR" };
     private readonly List<string> States = new()
     {
         "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL",
@@ -295,7 +278,6 @@
     private readonly List<string> StatusOptions = new() { "Not started", "In progress", "Blocked", "Overdue" };
 
     private HashSet<string> StateSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
-    private HashSet<string> RegionSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> ModeSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> StatusSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
 
@@ -320,7 +302,6 @@
             StartDateFilter = null;
             StopDateFilter = null;
             StateSelections.Clear();
-            RegionSelections.Clear();
             ModeSelections.Clear();
             StatusSelections.Clear();
             PageSizeTouched = false;
@@ -352,8 +333,6 @@
         StateSelections.Clear();
         StateSelections.UnionWith(ParseCsv(StateQuery));
 
-        RegionSelections.Clear();
-        RegionSelections.UnionWith(ParseCsv(RegionQuery));
 
         ModeSelections.Clear();
         ModeSelections.UnionWith(ParseCsv(ModeQuery));
@@ -472,7 +451,6 @@
         StartDateFilter = null;
         StopDateFilter = null;
         StateSelections.Clear();
-        RegionSelections.Clear();
         ModeSelections.Clear();
         PageIndex = 0;
         PageSizeTouched = false;
@@ -534,10 +512,6 @@
             q = q.Where(s => StateSelections.Contains(s.State));
         }
 
-        if (RegionSelections.Count > 0)
-        {
-            q = q.Where(s => RegionSelections.Contains(s.Region));
-        }
 
         if (ModeSelections.Count > 0)
         {
@@ -574,7 +548,6 @@
 
         var statuses = new[] { "Not started", "In progress", "Blocked", "Overdue" };
         var states = new[] { "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", "PR" };
-        var regions = new[] { "SOR", "NWR", "MTR", "DLR", "PCR", "NER", "EMR", "HLR", "GLR", "UMR", "NPR", "SPR" };
         var modes = new[] { "CAWI", "CATI", "CAPI", "Paper" };
 
         int nextId = SurveyRows.Max(s => s.Id) + 1;
@@ -600,7 +573,7 @@
             stopDate,
             statuses[rand.Next(statuses.Length)],
             states[rand.Next(states.Length)],
-            regions[rand.Next(regions.Length)],
+            "N/A",
             modes[rand.Next(modes.Length)]
             ));
         }
@@ -614,7 +587,6 @@
         var chips = new List<FilterChip>();
 
         chips.AddRange(StateSelections.Select(s => new FilterChip(s, () => StateSelections.Remove(s))));
-        chips.AddRange(RegionSelections.Select(r => new FilterChip(r, () => RegionSelections.Remove(r))));
         chips.AddRange(ModeSelections.Select(m => new FilterChip(m, () => ModeSelections.Remove(m))));
         chips.AddRange(StatusSelections.Select(s => new FilterChip(s, () => StatusSelections.Remove(s))));
         chips.AddRange(YearSelections.Select(y => new FilterChip(y, () => YearSelections.Remove(y))));

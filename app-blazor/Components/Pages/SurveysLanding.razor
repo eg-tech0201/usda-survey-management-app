@@ -69,21 +69,6 @@
                     </div>
 
                     <div class="filters-group">
-                        <div class="filters-subtitle">Regions</div>
-                        <div class="filters-checks">
-                            @foreach (var region in Regions)
-                            {
-                                <label class="check-pill">
-                                    <input type="checkbox"
-                                           checked="@RegionSelections.Contains(region)"
-                                           @onchange="e => ToggleSelection(RegionSelections, region, e)" />
-                                    <span>@region</span>
-                                </label>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="filters-group">
                         <div class="filters-subtitle">Mode</div>
                         <div class="filters-checks">
                             @foreach (var mode in Modes)
@@ -191,7 +176,6 @@
     private string ResultsSize { get; set; } = "";
 
     private readonly List<string> Years = new() { "2027", "2026", "2025" };
-    private readonly List<string> Regions = new() { "SOR", "NWR", "MTR", "DLR", "PCR", "NER", "EMR", "HLR", "GLR", "UMR", "NPR", "SPR" };
     private readonly List<string> States = new()
     {
         "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL",
@@ -205,7 +189,6 @@
     private readonly List<string> StatusOptions = new() { "Not started", "In progress", "Blocked", "Overdue" };
 
     private HashSet<string> StateSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
-    private HashSet<string> RegionSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> ModeSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> StatusSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> YearSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
@@ -247,7 +230,6 @@
         StartDateFilter = null;
         StopDateFilter = null;
         StateSelections.Clear();
-        RegionSelections.Clear();
         ModeSelections.Clear();
         ResultsSize = "";
         StatusSelections.Clear();
@@ -262,7 +244,6 @@
         var chips = new List<FilterChip>();
 
         chips.AddRange(StateSelections.Select(s => new FilterChip(s, () => StateSelections.Remove(s))));
-        chips.AddRange(RegionSelections.Select(r => new FilterChip(r, () => RegionSelections.Remove(r))));
         chips.AddRange(ModeSelections.Select(m => new FilterChip(m, () => ModeSelections.Remove(m))));
         chips.AddRange(StatusSelections.Select(s => new FilterChip(s, () => StatusSelections.Remove(s))));
         chips.AddRange(YearSelections.Select(y => new FilterChip(y, () => YearSelections.Remove(y))));
@@ -323,11 +304,6 @@
             queryParts.Add($"state={encoded}");
         }
 
-        if (RegionSelections.Count > 0)
-        {
-            var encoded = string.Join(",", RegionSelections.Select(Uri.EscapeDataString));
-            queryParts.Add($"region={encoded}");
-        }
 
         if (ModeSelections.Count > 0)
         {
