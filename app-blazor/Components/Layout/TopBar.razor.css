@@ -1,14 +1,14 @@
 .sms-topbar {
     display: grid;
-    grid-template-columns: auto minmax(320px, 1fr) auto;
-    gap: 1rem;
+    grid-template-columns: auto minmax(320px, 520px) auto;
+    gap: 0.75rem;
     align-items: center;
-    padding: 0.75rem 1rem;
+    padding: 0.65rem 1rem;
     border-bottom: 1px solid var(--brand-border);
     background: var(--brand-surface);
     position: sticky;
     top: 0;
-    z-index: 5;
+    z-index: 1000;
 }
 
 .sms-topbar-left {
@@ -40,6 +40,8 @@
 
 .sms-topbar-search {
     min-width: 0;
+    justify-self: start;
+    width: 100%;
 }
 
 .dashboard-searchbar {
@@ -51,12 +53,13 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
 .search-shell {
     width: 100%;
-    flex: 1 1 auto;
+    max-width: 520px;
+    flex: 0 1 auto;
     position: relative;
     z-index: 201;
     padding-right: 0;
@@ -69,15 +72,13 @@
         linear-gradient(180deg, #ffffff, #f2f8f5) padding-box,
         linear-gradient(135deg, #0f4f2c, #55b07a 40%, #bfe9cf 70%, #0b2b4b) border-box;
     border-radius: 999px;
-    padding: 0.85rem 7.5rem 0.85rem 3.2rem;
+    padding: 0.4rem 3.6rem 0.4rem 2.25rem;
     font-weight: 700;
+    font-size: 0.95rem;
     color: var(--brand-navy);
-    box-shadow: 0 10px 22px rgba(11, 43, 75, 0.08);
+    box-shadow: 0 6px 16px rgba(11, 43, 75, 0.08);
     transition: box-shadow 160ms ease, border-color 160ms ease;
     caret-color: var(--brand-green);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .search-input:focus {
@@ -90,23 +91,42 @@
     background: linear-gradient(90deg, var(--brand-green), var(--brand-navy));
     -webkit-background-clip: text;
     background-clip: text;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
+}
+
+@media (max-width: 900px) {
+    .sms-topbar {
+        grid-template-columns: auto minmax(220px, 1fr) auto;
+    }
+
+    .search-row {
+        flex-wrap: wrap;
+    }
+
+    .search-input {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .search-input::placeholder {
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
 }
 
 .search-filter-button {
     position: absolute;
     top: 50%;
-    right: 16px;
+    right: 8px;
     transform: translateY(-50%);
     border: 1px solid transparent;
     background:
         linear-gradient(180deg, #ffffff, #f2f8f5) padding-box,
         linear-gradient(135deg, #1f6f3f, #55b07a 50%, #0b2b4b) border-box;
     border-radius: 999px;
-    height: 34px;
-    padding: 0 0.7rem;
+    height: 26px;
+    padding: 0 0.45rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -119,12 +139,12 @@
 .search-icon-button {
     position: absolute;
     top: 50%;
-    left: 14px;
+    left: 12px;
     transform: translateY(-50%);
     border: none;
     background: transparent;
     color: var(--brand-navy);
-    font-size: 1.05rem;
+    font-size: 0.9rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -146,7 +166,7 @@
     border-radius: 18px;
     box-shadow: 0 18px 38px rgba(0, 0, 0, 0.16);
     padding: 0 1rem 1rem;
-    z-index: 999;
+    z-index: 1100;
     max-height: calc(100vh - 220px);
     overflow: auto;
     pointer-events: auto;
