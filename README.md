@@ -19,9 +19,8 @@ The current demo uses native Microsoft Blazor (Razor components) and custom CSS 
 Native Blazor + Razor components + custom CSS
 
 ### Microsoft Learn references (also see `app-blazor/Components/_Imports.razor`)
-- Razor components: https://learn.microsoft.com/aspnet/core/blazor/components/?view=aspnetcore-9.0
-- Forms and validation: https://learn.microsoft.com/aspnet/core/blazor/forms-and-validation?view=aspnetcore-9.0
-- Routing and NavLink: https://learn.microsoft.com/aspnet/core/blazor/routing?view=aspnetcore-9.0
-- JavaScript interop: https://learn.microsoft.com/aspnet/core/blazor/javascript-interoperability/?view=aspnetcore-9.0
-- Virtualization: https://learn.microsoft.com/aspnet/core/blazor/components/virtualization?view=aspnetcore-9.0
-- Render modes (Interactive Server): https://learn.microsoft.com/aspnet/core/blazor/components/render-modes?view=aspnetcore-9.0
+- Razor components: https://learn.microsoft.com/aspnet/core/blazor/components/
+- Forms and validation: https://learn.microsoft.com/aspnet/core/blazor/forms-and-validation
+- Routing and NavLink: https://learn.microsoft.com/aspnet/core/blazor/routing
+- JavaScript interop: https://learn.microsoft.com/aspnet/core/blazor/javascript-interoperability
+- Render modes (Interactive Server): https://learn.microsoft.com/aspnet/core/blazor/components/render-modes
