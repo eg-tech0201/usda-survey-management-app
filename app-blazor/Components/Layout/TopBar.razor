@@ -2,12 +2,6 @@
 @inject IJSRuntime Js
 
 <header class="sms-topbar">
-    <div class="sms-topbar-left">
-        <button type="button" class="hamburger" title="Toggle menu" @onclick="ToggleNavigation">
-            <span class="bi bi-list" aria-hidden="true"></span>
-        </button>
-    </div>
-
     <div class="sms-topbar-search" @onclick:stopPropagation="true">
         <form class="dashboard-searchbar" @onsubmit="OnSearchSubmit" @onsubmit:preventDefault="true">
             @if (ShowFilters)
@@ -171,18 +165,11 @@
 
 @code {
     [Parameter] public string Title { get; set; } = "Dashboard";
-    [Parameter] public EventCallback OnToggleNavigation { get; set; }
 
     private bool ShowNotifs;
     private int NotifCount => 4;
 
     private void ToggleNotifs() => ShowNotifs = !ShowNotifs;
-
-    private async Task ToggleNavigation()
-    {
-        if (OnToggleNavigation.HasDelegate)
-            await OnToggleNavigation.InvokeAsync();
-    }
 
     private string SearchText { get; set; } = "";
     private bool ShowFilters { get; set; }

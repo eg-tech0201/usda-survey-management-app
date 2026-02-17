@@ -3,10 +3,12 @@
 @using static app_blazor.Components.Shared.TaskCalendar
 @inject NavigationManager Navigation
 @inject IJSRuntime Js
+@inject IHttpClientFactory HttpClientFactory
+@inject app_blazor.Services.SurveyInstanceService SurveyInstanceService
 
 <h2 class="page-h2">Dashboard</h2>
 
-<div class="dashboard-grid" @onclick="ClearSelection">
+<div class="dashboard-grid dashboard-two-col" @onclick="ClearSelection">
     <section class="panel calendar-panel dashboard-col-1 dashboard-row-1">
         <div class="calendar-panel-header">
             <a class="panel-title-link" href="/calendar">My Tasks</a>
@@ -67,93 +69,133 @@
     </section>
 
     <div class="dashboard-stack dashboard-col-2 dashboard-row-1">
-        <section class="panel reports-panel">
-            <a class="panel-title-link" href="/reports">Reports Hub</a>
-            <div class="reports-summary">
-                <div class="reports-kpis">
-                    <div class="omb-tile">
-                        <div class="omb-label">Total Reports</div>
-                        <div class="omb-value">@ReportsTotal</div>
-                    </div>
-                    <div class="omb-tile">
-                        <div class="omb-label">Ready</div>
-                        <div class="omb-value">@ReportsReady</div>
-                    </div>
-                    <div class="omb-tile">
-                        <div class="omb-label">Draft</div>
-                        <div class="omb-value">@ReportsDraft</div>
-                    </div>
+        <section class="panel stats-panel stats-panel-bubbles">
+            <div class="stats-header">Survey Statistics</div>
+            <div class="stats-grid stats-grid-bubbles">
+                <div class="stat-tile">
+                    <div class="stat-label">Number of survey instruments served to date:</div>
+                    <div class="stat-value">0</div>
                 </div>
-                <div class="reports-preview">
-                    <div class="reports-preview-header">Recent Reports</div>
-                    <ul>
-                        @foreach (var report in RecentReports)
-                        {
-                            <li>
-                                <span class="report-id">@report.Id</span>
-                                <a class="report-title-link" href="/reports">@report.Title</a>
-                                <span class="report-status @ReportStatusClass(report.Status)">@report.Status</span>
-                                <span class="report-date">@report.GeneratedAt.ToString("yyyy-MM-dd")</span>
-                            </li>
-                        }
-                    </ul>
+                <div class="stat-tile">
+                    <div class="stat-label">Number of respondents sampled to date:</div>
+                    <div class="stat-value">3,562,523</div>
+                </div>
+                <div class="stat-tile">
+                    <div class="stat-label">Number of responses to date:</div>
+                    <div class="stat-value">1,097,260</div>
+                </div>
+                <div class="stat-tile">
+                    <div class="stat-label">Response rate to date:</div>
+                    <div class="stat-value">5.4417%</div>
+                </div>
+                <div class="stat-tile">
+                    <div class="stat-label">Average customer experience:</div>
+                    <div class="stat-value">Not available</div>
                 </div>
             </div>
-            <div class="omb-actions"></div>
         </section>
 
-        <section class="panel omb-panel">
-            <a class="panel-title-link" href="/omb-dockets">OMB Dockets</a>
-            <div class="omb-summary-grid omb-compact">
-                <div class="omb-tile">
-                    <div class="omb-label">Total Dockets</div>
-                    <div class="omb-value">@OmbTotal</div>
+        <section class="panel surveys-search-panel">
+            <div class="panel-title-row">
+                <a class="panel-title-link" href="/surveys">Survey Search</a>
+            </div>
+            <div class="selector-row">
+                <div class="selector-field">
+                    <label class="selector-label">Reference Date</label>
+                    <InputDate class="select-lite"
+                               @bind-Value="SelectedReferenceDate"
+                               @bind-Value:after="OnReferenceDateChanged" />
                 </div>
-                <div class="omb-tile">
-                    <div class="omb-label">Pending Approval</div>
-                    <div class="omb-value">@OmbPending</div>
+                <div class="selector-field">
+                    <label class="selector-label">Survey ID</label>
+                    <select class="select-lite"
+                            value="@SelectedSurveyIdString"
+                            @onchange="OnSurveyIdChanged">
+                        <option value="">Select survey</option>
+                        @foreach (var id in AvailableSurveyIds)
+                        {
+                            <option value="@id">@id</option>
+                        }
+                    </select>
                 </div>
-                <div class="omb-tile">
-                    <div class="omb-label">Approved (last 30 days)</div>
-                    <div class="omb-value">@OmbApprovedRecent</div>
+                <div class="selector-field">
+                    <label class="selector-label">Sample ID</label>
+                    <select class="select-lite"
+                            value="@SelectedSampleId"
+                            @onchange="OnSampleIdChanged">
+                        <option value="">Select sample</option>
+                        @foreach (var sample in AvailableSampleIds)
+                        {
+                            <option value="@sample">@sample</option>
+                        }
+                    </select>
+                </div>
+                <div class="selector-actions">
+                    <button class="button-primary" type="button" @onclick="NavigateToSelectedDetails" disabled="@(!CanViewDetails)">
+                        View Details
+                    </button>
                 </div>
             </div>
-            <div class="omb-actions">
-                <a class="omb-latest-link" href="/omb-dockets/details">Latest: @LatestDocketId — @LatestDocketTitle</a>
+            <div class="search-input-row">
+                <button class="search-icon-button" type="button" title="Search">
+                    <span class="bi bi-search" aria-hidden="true"></span>
+                </button>
+                <input class="survey-search search-input"
+                       placeholder="Search survey list (ID / title / OMB / sample)…"
+                       @bind="SearchText"
+                       @bind:event="oninput" />
+                <button class="search-filter-button" type="button" title="Filters">
+                    <span class="bi bi-sliders" aria-hidden="true"></span>
+                    <span class="filter-label">Filters</span>
+                </button>
             </div>
+            @if (!string.IsNullOrWhiteSpace(OptionsMessage))
+            {
+                <div class="selector-message">@OptionsMessage</div>
+            }
+        </section>
+
+        <section class="panel recent-surveys-panel">
+            <div class="panel-title-row">
+                <div class="panel-title">Recent Surveys</div>
+                <a class="panel-title-link" href="/surveys/results">View all</a>
+            </div>
+            @if (RecentSurveyInstances.Count == 0)
+            {
+                <div class="empty-hint">No recent surveys available.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Survey ID</th>
+                                <th>Title</th>
+                                <th>Sample ID</th>
+                                <th>Reference Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var survey in RecentSurveyInstances)
+                            {
+                                <tr>
+                                    <td>
+                                        <a class="table-link" href="@BuildDetailsHref(survey)">@survey.SurveyId</a>
+                                    </td>
+                                    <td>
+                                        <a class="table-link" href="@BuildDetailsHref(survey)">@survey.Title</a>
+                                    </td>
+                                    <td>@survey.SampleId</td>
+                                    <td>@survey.ReferenceDate.ToString("yyyy-MM-dd")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </section>
     </div>
-
-    <section class="panel budget-panel dashboard-col-3 dashboard-row-1">
-        <a class="panel-title-link" href="/budget">Budget Snapshot</a>
-        <div class="budget-grid">
-            <div class="budget-ring" style="--budget-pct:@BudgetSpentPct%">
-                <div class="budget-ring-inner">
-                    <div class="budget-ring-label">Spent</div>
-                    <div class="budget-ring-value">@BudgetSpentPct%</div>
-                </div>
-            </div>
-            <div class="budget-meta">
-                <div class="budget-row">
-                    <span class="budget-label">Allocated</span>
-                    <span class="budget-value">@BudgetAllocatedDisplay</span>
-                </div>
-                <div class="budget-row">
-                    <span class="budget-label">Spent</span>
-                    <span class="budget-value">@BudgetSpentDisplay</span>
-                </div>
-                <div class="budget-row">
-                    <span class="budget-label">Remaining</span>
-                    <span class="budget-value">@BudgetRemainingDisplay</span>
-                </div>
-                <div class="budget-bar">
-                    <div class="budget-bar-fill" style="width:@BudgetSpentPct%"></div>
-                </div>
-                <div class="budget-hint">@BudgetAlert</div>
-            </div>
-        </div>
-        <div class="omb-actions"></div>
-    </section>
 </div>
 
 @code {
@@ -184,57 +226,6 @@
             "In progress"), // 4:00 PM
     };
 
-    private record OmbDocketRow(string Id, string Title, string Status, DateTime UpdatedAt);
-
-    private readonly List<OmbDocketRow> OmbDockets = new()
-    {
-        new("OMB-2026-001", "Crop Yield Survey OMB Renewal", "Approved", new DateTime(2026, 1, 15)),
-        new("OMB-2026-014", "Agricultural Census Pilot", "Pending", new DateTime(2026, 1, 17)),
-        new("OMB-2026-099", "Irrigation & Water Use", "Approved", new DateTime(2026, 1, 14)),
-        new("OMB-2026-203", "Dairy Inventory Update", "Draft", new DateTime(2026, 1, 12))
-    };
-
-    private int OmbTotal => OmbDockets.Count;
-    private int OmbPending => OmbDockets.Count(d => d.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase));
-    private int OmbApprovedRecent => OmbDockets.Count(d =>
-        d.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase) &&
-        d.UpdatedAt >= DateTime.Today.AddDays(-30));
-    private string LatestDocketId => OmbDockets.OrderByDescending(d => d.UpdatedAt).First().Id;
-    private string LatestDocketTitle => OmbDockets.OrderByDescending(d => d.UpdatedAt).First().Title;
-
-    private record ReportRow(string Id, string Title, string Status, DateTime GeneratedAt);
-
-    private readonly List<ReportRow> Reports = new()
-    {
-        new("RPT-2201", "OMB Compliance Summary", "Ready", new DateTime(2026, 1, 15)),
-        new("RPT-2202", "ASB Data Quality Report", "Draft", new DateTime(2026, 1, 14)),
-        new("RPT-2205", "Yellowbook Validation", "Ready", new DateTime(2026, 1, 13)),
-        new("RPT-2206", "ASB Metric Rollup", "Draft", new DateTime(2026, 1, 12))
-    };
-
-    private int ReportsTotal => Reports.Count;
-    private int ReportsReady => Reports.Count(r => r.Status.Equals("Ready", StringComparison.OrdinalIgnoreCase));
-    private int ReportsDraft => Reports.Count(r => r.Status.Equals("Draft", StringComparison.OrdinalIgnoreCase));
-    private IEnumerable<ReportRow> RecentReports => Reports
-        .OrderByDescending(r => r.GeneratedAt)
-        .Take(3);
-
-    private static string ReportStatusClass(string status) => status switch
-    {
-        "Ready" => "report-status-ready",
-        "Draft" => "report-status-draft",
-        _ => "report-status-draft"
-    };
-
-    private decimal BudgetAllocated => 1_200_000m;
-    private decimal BudgetSpent => 740_000m;
-    private decimal BudgetRemaining => BudgetAllocated - BudgetSpent;
-    private int BudgetSpentPct => BudgetAllocated <= 0 ? 0 : (int)Math.Round((BudgetSpent / BudgetAllocated) * 100m);
-    private string BudgetAllocatedDisplay => "$1.2M";
-    private string BudgetSpentDisplay => "$740K";
-    private string BudgetRemainingDisplay => "$460K";
-    private string BudgetAlert => "Travel budget at 82% utilization.";
-
     private List<TaskCalendar.CalendarEvent> CalendarEvents =>
     Tasks.Select(t => new TaskCalendar.CalendarEvent
     {
@@ -252,6 +243,164 @@
     private void ClearSelection()
     {
         SelectedEventId = null;
+    }
+
+    private List<string> AvailableReferenceDates { get; set; } = new();
+    private List<int> AvailableSurveyIds { get; set; } = new();
+    private List<string> AvailableSampleIds { get; set; } = new();
+    private string SearchText { get; set; } = "";
+    private DateTime? SelectedReferenceDate { get; set; }
+    private int? SelectedSurveyId { get; set; }
+    private string? SelectedSampleId { get; set; }
+    private string? OptionsMessage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshFilterOptionsAsync();
+    }
+
+    private bool CanViewDetails =>
+        SelectedReferenceDate.HasValue &&
+        SelectedSurveyId.HasValue &&
+        !string.IsNullOrWhiteSpace(SelectedSampleId);
+
+    private string SelectedSurveyIdString => SelectedSurveyId?.ToString() ?? "";
+
+    private async Task OnReferenceDateChanged()
+    {
+        await RefreshFilterOptionsAsync();
+    }
+
+    private async Task OnSurveyIdChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var parsed))
+        {
+            SelectedSurveyId = parsed;
+        }
+        else
+        {
+            SelectedSurveyId = null;
+        }
+
+        await RefreshFilterOptionsAsync();
+    }
+
+    private async Task OnSampleIdChanged(ChangeEventArgs e)
+    {
+        SelectedSampleId = e.Value?.ToString();
+        await RefreshFilterOptionsAsync();
+    }
+
+    private async Task RefreshFilterOptionsAsync()
+    {
+        OptionsMessage = null;
+        var options = await FetchFilterOptionsAsync();
+        if (options is null)
+        {
+            OptionsMessage = "Unable to load selection options. Please try again.";
+            return;
+        }
+
+        AvailableReferenceDates = options.AvailableReferenceDates;
+        AvailableSurveyIds = options.AvailableSurveyIds;
+        AvailableSampleIds = options.AvailableSampleIds;
+
+        var cleared = false;
+        if (SelectedReferenceDate.HasValue &&
+            !AvailableReferenceDates.Contains(SelectedReferenceDate.Value.ToString("yyyy-MM-dd")))
+        {
+            SelectedReferenceDate = null;
+            cleared = true;
+        }
+
+        if (SelectedSurveyId.HasValue &&
+            !AvailableSurveyIds.Contains(SelectedSurveyId.Value))
+        {
+            SelectedSurveyId = null;
+            cleared = true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(SelectedSampleId) &&
+            !AvailableSampleIds.Contains(SelectedSampleId))
+        {
+            SelectedSampleId = null;
+            cleared = true;
+        }
+
+        if (cleared)
+        {
+            options = await FetchFilterOptionsAsync();
+            if (options is not null)
+            {
+                AvailableReferenceDates = options.AvailableReferenceDates;
+                AvailableSurveyIds = options.AvailableSurveyIds;
+                AvailableSampleIds = options.AvailableSampleIds;
+            }
+        }
+
+        if (AvailableReferenceDates.Count == 0 ||
+            AvailableSurveyIds.Count == 0 ||
+            AvailableSampleIds.Count == 0)
+        {
+            OptionsMessage = "No matches found for the current selections.";
+        }
+    }
+
+    private async Task<app_blazor.Services.FilterOptionsResponse?> FetchFilterOptionsAsync()
+    {
+        var client = HttpClientFactory.CreateClient();
+        client.BaseAddress = new Uri(Navigation.BaseUri);
+
+        var query = new List<string>();
+        if (SelectedReferenceDate.HasValue)
+            query.Add($"referenceDate={SelectedReferenceDate.Value:yyyy-MM-dd}");
+        if (SelectedSurveyId.HasValue)
+            query.Add($"surveyId={SelectedSurveyId.Value}");
+        if (!string.IsNullOrWhiteSpace(SelectedSampleId))
+            query.Add($"sampleId={Uri.EscapeDataString(SelectedSampleId)}");
+
+        var url = "api/survey-instances/filter-options";
+        if (query.Count > 0)
+            url += "?" + string.Join("&", query);
+
+        return await client.GetFromJsonAsync<app_blazor.Services.FilterOptionsResponse>(url);
+    }
+
+    private void NavigateToSelectedDetails()
+    {
+        if (!CanViewDetails)
+        {
+            OptionsMessage = "Select Reference Date, Survey ID, and Sample ID to view details.";
+            return;
+        }
+
+        var parts = new List<string>
+        {
+            $"referenceDate={SelectedReferenceDate!.Value:yyyy-MM-dd}",
+            $"surveyId={SelectedSurveyId!.Value}",
+            $"sampleId={Uri.EscapeDataString(SelectedSampleId!)}"
+        };
+
+        Navigation.NavigateTo($"/surveys/details?{string.Join("&", parts)}");
+    }
+
+    private IReadOnlyList<app_blazor.Services.SurveyInstance> RecentSurveyInstances =>
+        SurveyInstanceService.Instances
+            .OrderByDescending(i => i.ReferenceDate)
+            .ThenByDescending(i => i.SurveyDate)
+            .Take(10)
+            .ToList();
+
+    private string BuildDetailsHref(app_blazor.Services.SurveyInstance instance)
+    {
+        var parts = new List<string>
+        {
+            $"referenceDate={instance.ReferenceDate:yyyy-MM-dd}",
+            $"surveyId={instance.SurveyId}",
+            $"sampleId={Uri.EscapeDataString(instance.SampleId)}"
+        };
+
+        return $"/surveys/details?{string.Join("&", parts)}";
     }
 
 

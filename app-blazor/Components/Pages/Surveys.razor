@@ -1,5 +1,9 @@
 @page "/surveys/results"
 @inject IJSRuntime Js
+@inject NavigationManager Navigation
+@inject IHttpClientFactory HttpClientFactory
+@inject app_blazor.Services.SurveyInstanceService SurveyInstanceService
+@inject NavigationManager Navigation
 
 <h1 class="page-h1">Surveys</h1>
 
@@ -10,20 +14,59 @@
             <div class="filters-backdrop" @onclick="CloseFilters"></div>
         }
         <div class="search-shell" @ref="_filtersAnchor">
-            <button class="search-icon-button" type="submit" title="Search">
-                <span class="bi bi-search" aria-hidden="true"></span>
-            </button>
-            <input class="survey-search search-input" placeholder="Search survey list (ID / title / OMB / sample)…" @bind="SearchText"
-                   @bind:event="oninput" @ref="_searchInput" />
+            <div class="selector-row selector-row-compact">
+                <div class="selector-field">
+                    <label class="selector-label">Reference Date</label>
+                    <InputDate class="select-lite"
+                               @bind-Value="SelectedReferenceDate"
+                               @bind-Value:after="OnReferenceDateChanged" />
+                </div>
+                <div class="selector-field">
+                    <label class="selector-label">Survey ID</label>
+                    <select class="select-lite"
+                            value="@SelectedSurveyIdString"
+                            @onchange="OnSurveyIdChanged">
+                        <option value="">Select survey</option>
+                        @foreach (var id in AvailableSurveyIds)
+                        {
+                            <option value="@id">@id</option>
+                        }
+                    </select>
+                </div>
+                <div class="selector-field">
+                    <label class="selector-label">Sample ID</label>
+                    <select class="select-lite"
+                            value="@SelectedSampleId"
+                            @onchange="OnSampleIdChanged">
+                        <option value="">Select sample</option>
+                        @foreach (var sample in AvailableSampleIds)
+                        {
+                            <option value="@sample">@sample</option>
+                        }
+                    </select>
+                </div>
+                <div class="selector-actions">
+                    <button class="button-primary" type="button" @onclick="NavigateToSelectedDetails" disabled="@(!CanViewDetails)">
+                        View Details
+                    </button>
+                </div>
+            </div>
+            <div class="search-input-row">
+                <button class="search-icon-button" type="submit" title="Search">
+                    <span class="bi bi-search" aria-hidden="true"></span>
+                </button>
+                <input class="survey-search search-input" placeholder="Search survey list (ID / title / OMB / sample)…" @bind="SearchText"
+                       @bind:event="oninput" @ref="_searchInput" />
 
-            <button class="search-filter-button" type="button" @onclick="ToggleFilters" title="Filters">
-                <span class="bi bi-sliders" aria-hidden="true"></span>
-                <span class="filter-label">Filters</span>
-                @if (FilterAppliedCount > 0)
-                {
-                    <span class="filter-count">(@FilterAppliedCount)</span>
-                }
-            </button>
+                <button class="search-filter-button" type="button" @onclick="ToggleFilters" title="Filters">
+                    <span class="bi bi-sliders" aria-hidden="true"></span>
+                    <span class="filter-label">Filters</span>
+                    @if (FilterAppliedCount > 0)
+                    {
+                        <span class="filter-count">(@FilterAppliedCount)</span>
+                    }
+                </button>
+            </div>
 
             @if (ShowFilters)
             {
@@ -129,6 +172,10 @@
                 </div>
             }
         </div>
+        @if (!string.IsNullOrWhiteSpace(OptionsMessage))
+        {
+            <div class="selector-message">@OptionsMessage</div>
+        }
     </div>
 
     <div class="toolbar-meta">
@@ -143,6 +190,9 @@
                 <button class="button-lite" @onclick="NextPage" disabled="@IsNextDisabled">›</button>
             </div>
 
+            <a class="button-lite" href="@BuildExportUrl()">Export CSV</a>
+            <button class="button-lite" @onclick="UndoLast" disabled="@(!CanUndo)">Undo</button>
+
             <div class="pagesize">
                 <span class="pagesize-label">Rows:</span>
                 <select class="select-lite" @bind="PageSizeString" @bind:after="OnPageSizeChanged">
@@ -156,36 +206,103 @@
     </div>
 </div>
 
+@if (IsAuthorized)
+{
+    <div class="bulk-bar">
+        <div class="bulk-title">Bulk Edit</div>
+        <input class="grid-input" placeholder="Enumerator ID" @bind="BulkEnumeratorId" />
+        <input class="grid-input" placeholder="Manager ID" @bind="BulkManagerId" />
+        <input class="grid-input" placeholder="Coach ID" @bind="BulkCoachId" />
+        <button class="button-primary" @onclick="ApplyBulkUpdateAsync" disabled="@(!HasSelection)">Apply to Selected</button>
+        @if (!string.IsNullOrWhiteSpace(UndoMessage))
+        {
+            <span class="undo-message">@UndoMessage</span>
+        }
+    </div>
+}
+
 <div class="table-wrap">
     <table class="table-surveys">
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Survey Title</th>
-                <th>Survey Date</th>
-                <th>OMB Number</th>
-                <th>OMB Expires</th>
+                <th class="select-col">
+                    <input type="checkbox" @onchange="ToggleSelectAll" checked="@IsAllSelected" disabled="@(!IsAuthorized)" />
+                </th>
+                <th>Project Code</th>
+                <th>Sample ID</th>
                 <th>Sample Name</th>
-                <th>Start Date</th>
-                <th>Stop Date</th>
-                <th>Status</th>
+                <th>Survey ID</th>
+                <th>Survey Title</th>
+                <th>Survey Subtitle</th>
+                <th>Survey Date</th>
+                <th>State ID</th>
+                <th>State</th>
+                <th>OpDom Status</th>
+                <th>DCMS Code</th>
+                <th>Enumerator ID</th>
+                <th>Enumerator</th>
+                <th>Manager ID</th>
+                <th>Manager</th>
+                <th>Coach ID</th>
+                <th>Coach</th>
+                <th>Enumerator Notes</th>
+                <th>Response Code</th>
+                <th>Actions</th>
             </tr>
         </thead>
 
         <tbody>
             @foreach (var s in PagedRows)
             {
-                <tr>
-                    <td class="td-id">@s.Id</td>
-                    <td class="td-title">@s.Title</td>
+                <tr class="survey-row" @onclick="() => NavigateToDetails(s)">
+                    <td class="select-col" @onclick:stopPropagation="true">
+                        <input type="checkbox" checked="@IsSelected(s)" disabled="@(!IsAuthorized)" @onchange="e => ToggleSelectRow(s, e)" />
+                    </td>
+                    <td class="td-title">@s.ProjectCode</td>
+                    <td class="td-title">@s.SampleId</td>
+                    <td class="td-title">@s.SampleName</td>
+                    <td class="td-id">
+                        <a class="survey-link" href="@BuildDetailsHref(s)">@s.Id</a>
+                    </td>
+                    <td class="td-title">
+                        <a class="survey-link" href="@BuildDetailsHref(s)">@s.Title</a>
+                    </td>
+                    <td class="td-title">@s.SubTitle</td>
                     <td>@s.SurveyDate.ToString("yyyy-MM-dd")</td>
-                    <td>@s.OmbNumber</td>
-                    <td>@s.OmbExpires.ToString("yyyy-MM-dd")</td>
-                    <td>@s.SampleName</td>
-                    <td>@s.StartDate.ToString("yyyy-MM-dd")</td>
-                    <td>@s.StopDate.ToString("yyyy-MM-dd")</td>
-                    <td>
-                        <span class="status-pill @StatusClass(s.Status)">@s.Status</span>
+                    <td>@s.StateId</td>
+                    <td>@s.StateAlpha</td>
+                    <td>@s.OpDomStatusId</td>
+                    <td>@s.DcmsCodeId</td>
+                    <td class="cell-edit" @onclick:stopPropagation="true">
+                        <input class="grid-input @(IsDirty(s, nameof(RowEditState.EnumeratorId)) ? "dirty" : "")"
+                               value="@GetEditValue(s, nameof(RowEditState.EnumeratorId))"
+                               disabled="@(!IsAuthorized)"
+                               @oninput="e => OnFieldChanged(s, nameof(RowEditState.EnumeratorId), e.Value?.ToString())" />
+                    </td>
+                    <td>@s.EnumeratorName</td>
+                    <td class="cell-edit" @onclick:stopPropagation="true">
+                        <input class="grid-input @(IsDirty(s, nameof(RowEditState.ManagerId)) ? "dirty" : "")"
+                               value="@GetEditValue(s, nameof(RowEditState.ManagerId))"
+                               disabled="@(!IsAuthorized)"
+                               @oninput="e => OnFieldChanged(s, nameof(RowEditState.ManagerId), e.Value?.ToString())" />
+                    </td>
+                    <td>@s.ManagerName</td>
+                    <td class="cell-edit" @onclick:stopPropagation="true">
+                        <input class="grid-input @(IsDirty(s, nameof(RowEditState.CoachId)) ? "dirty" : "")"
+                               value="@GetEditValue(s, nameof(RowEditState.CoachId))"
+                               disabled="@(!IsAuthorized)"
+                               @oninput="e => OnFieldChanged(s, nameof(RowEditState.CoachId), e.Value?.ToString())" />
+                    </td>
+                    <td>@s.CoachName</td>
+                    <td class="cell-edit" @onclick:stopPropagation="true">
+                        <input class="grid-input @(IsDirty(s, nameof(RowEditState.EnumeratorNotes)) ? "dirty" : "")"
+                               value="@GetEditValue(s, nameof(RowEditState.EnumeratorNotes))"
+                               disabled="@(!IsAuthorized)"
+                               @oninput="e => OnFieldChanged(s, nameof(RowEditState.EnumeratorNotes), e.Value?.ToString())" />
+                    </td>
+                    <td>@s.ResponseCode</td>
+                    <td class="cell-edit" @onclick:stopPropagation="true">
+                        <button class="button-lite" @onclick="() => SaveRow(s)" disabled="@(!IsAuthorized || !IsRowDirty(s))">Save</button>
                     </td>
                 </tr>
             }
@@ -203,10 +320,15 @@
     [SupplyParameterFromQuery(Name = "state")] public string? StateQuery { get; set; }
     [SupplyParameterFromQuery(Name = "mode")] public string? ModeQuery { get; set; }
     [SupplyParameterFromQuery(Name = "size")] public string? SizeQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "referenceDate")] public string? ReferenceDateQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "surveyId")] public int? SurveyIdQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "sampleId")] public string? SampleIdQuery { get; set; }
 
     // ---- DEMO model (you already have this) ----
     private record SurveyRow(
     int Id,
+    string SampleId,
+    DateTime ReferenceDate,
     DateTime SurveyDate,
     string Title,
     string OmbNumber,
@@ -217,44 +339,24 @@
     string Status,
     string State,
     string Region,
-    string Mode
+    string Mode,
+    string ProjectCode,
+    string SubTitle,
+    string StateId,
+    string StateAlpha,
+    string DcmsCodeId,
+    string OpDomStatusId,
+    string EnumeratorId,
+    string EnumeratorName,
+    string ManagerId,
+    string ManagerName,
+    string CoachId,
+    string CoachName,
+    string ResponseCode,
+    string EnumeratorNotes
     );
 
-    // ---- Your list (keep your seed rows + generator) ----
-    private List<SurveyRow> SurveyRows = new()
-    {
-        new(312, new DateTime(2025, 11, 01), "PLACEMENT OF PULLET CHICKS FOR HATCHERY SUPPLY FLOCKS", "0535-0004",
-        new DateTime(2027, 11, 30), "316-PULLET PLACEMENTS",
-        new DateTime(2025, 11, 01), new DateTime(2025, 12, 15), "In progress", "IA", "NWR", "CAWI"),
-
-        new(1001, new DateTime(2026, 01, 05), "Crop Yield Survey (CY-2026)", "0535-0123",
-        new DateTime(2028, 06, 30), "CY-2026 Core Sample",
-        new DateTime(2026, 01, 05), new DateTime(2026, 03, 31), "Not started", "IA", "UMR", "CAPI"),
-
-        new(1002, new DateTime(2026, 01, 08), "Agricultural Census Pilot (ACP)", "0535-0456",
-        new DateTime(2027, 09, 30), "ACP Pilot Frame",
-        new DateTime(2026, 01, 10), new DateTime(2026, 02, 28), "Blocked", "AZ", "MTR", "CATI"),
-
-        new(1003, new DateTime(2026, 01, 11), "Farm Labor Study (FLS)", "0535-0789",
-        new DateTime(2029, 01, 31), "FLS 2026 Sample",
-        new DateTime(2026, 01, 15), new DateTime(2026, 04, 15), "In progress", "OR", "PCR", "CAWI"),
-
-        new(1004, new DateTime(2026, 01, 15), "Dairy Inventory Survey (DIS)", "0535-0321",
-        new DateTime(2027, 12, 31), "DIS Monthly Frame",
-        new DateTime(2026, 01, 01), new DateTime(2026, 01, 31), "Overdue", "WI", "GLR", "CAPI"),
-
-        new(1107, new DateTime(2026, 02, 01), "Producer Price Index (PPI) Follow-up", "0535-0555",
-        new DateTime(2028, 03, 31), "PPI Follow-up List",
-        new DateTime(2026, 02, 01), new DateTime(2026, 02, 20), "Not started", "NY", "NER", "CATI"),
-
-        new(1209, new DateTime(2026, 02, 10), "Irrigation & Water Use (IWU)", "0535-0666",
-        new DateTime(2028, 10, 31), "IWU Stratified Sample",
-        new DateTime(2026, 02, 12), new DateTime(2026, 05, 01), "In progress", "TX", "SPR", "CAPI"),
-
-        new(1302, new DateTime(2026, 03, 01), "Organic Production Survey (OPS)", "0535-0777",
-        new DateTime(2029, 05, 31), "OPS Recontact Frame",
-        new DateTime(2026, 03, 01), new DateTime(2026, 06, 15), "Not started", "NC", "EMR", "CAWI"),
-    };
+    private List<SurveyRow> SurveyRows = new();
 
     // ---- toolbar state ----
     private string SearchText { get; set; } = "";
@@ -280,6 +382,21 @@
     private HashSet<string> StateSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> ModeSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> StatusSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
+    private List<string> AvailableReferenceDates { get; set; } = new();
+    private List<int> AvailableSurveyIds { get; set; } = new();
+    private List<string> AvailableSampleIds { get; set; } = new();
+    private DateTime? SelectedReferenceDate { get; set; }
+    private int? SelectedSurveyId { get; set; }
+    private string? SelectedSampleId { get; set; }
+    private string? OptionsMessage { get; set; }
+    private const bool IsAuthorized = true;
+    private readonly Dictionary<string, RowEditState> RowEdits = new();
+    private readonly HashSet<string> SelectedKeys = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<UndoTransaction> UndoStack = new();
+    private string? UndoMessage { get; set; }
+    private string? BulkEnumeratorId { get; set; }
+    private string? BulkManagerId { get; set; }
+    private string? BulkCoachId { get; set; }
 
     // ---- paging ----
     private int PageIndex { get; set; } = 0;
@@ -289,8 +406,43 @@
 
     protected override void OnInitialized()
     {
-        GenerateAdditionalSurveys(100);
+        SurveyRows = SurveyInstanceService.Instances
+            .Select(i => new SurveyRow(
+                i.SurveyId,
+                i.SampleId,
+                i.ReferenceDate,
+                i.SurveyDate,
+                i.Title,
+                i.OmbNumber,
+                i.OmbExpires,
+                i.SampleName,
+                i.SurveyStartDate,
+                i.SurveyStopDate,
+                i.Status,
+                i.State,
+                i.Region,
+                i.Mode,
+                i.ProjectCode,
+                i.SubTitle,
+                i.StateId,
+                i.StateAlpha,
+                i.DcmsCodeId,
+                i.OpDomStatusId,
+                i.EnumeratorId,
+                i.EnumeratorName,
+                i.ManagerId,
+                i.ManagerName,
+                i.CoachId,
+                i.CoachName,
+                i.ResponseCode,
+                i.EnumeratorNotes))
+            .ToList();
         PageSizeString = PageSize == 0 ? "All" : PageSize.ToString(); // will be "10"
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshFilterOptionsAsync();
     }
 
     protected override void OnParametersSet()
@@ -343,6 +495,16 @@
             OnPageSizeChanged();
             PageSizeTouched = true;
         }
+
+        if (DateTime.TryParse(ReferenceDateQuery, out var parsedReferenceDate))
+        {
+            SelectedReferenceDate = parsedReferenceDate;
+        }
+
+        SelectedSurveyId = SurveyIdQuery;
+        SelectedSampleId = SampleIdQuery;
+
+        _ = RefreshFilterOptionsAsync();
     }
 
     // Recompute on every render (fine for demo sizes)
@@ -452,10 +614,36 @@
         StopDateFilter = null;
         StateSelections.Clear();
         ModeSelections.Clear();
+        SelectedReferenceDate = null;
+        SelectedSurveyId = null;
+        SelectedSampleId = null;
         PageIndex = 0;
         PageSizeTouched = false;
         PageSize = 10;
         PageSizeString = "10";
+    }
+
+    private void NavigateToDetails(SurveyRow row)
+    {
+        Navigation.NavigateTo(BuildDetailsHref(row));
+    }
+
+    private void NavigateToSelectedDetails()
+    {
+        if (!CanViewDetails)
+        {
+            OptionsMessage = "Select Reference Date, Survey ID, and Sample ID to view details.";
+            return;
+        }
+
+        var parts = new List<string>
+        {
+            $"referenceDate={SelectedReferenceDate!.Value:yyyy-MM-dd}",
+            $"surveyId={SelectedSurveyId!.Value}",
+            $"sampleId={Uri.EscapeDataString(SelectedSampleId!)}"
+        };
+
+        Navigation.NavigateTo($"/surveys/details?{string.Join("&", parts)}");
     }
 
 
@@ -469,6 +657,22 @@
         // ✅ key fix: SurveyRows (your list), NOT Surveys
         IEnumerable<SurveyRow> q = SurveyRows;
 
+        if (SelectedReferenceDate.HasValue)
+        {
+            var referenceDate = SelectedReferenceDate.Value.Date;
+            q = q.Where(s => s.ReferenceDate.Date == referenceDate);
+        }
+
+        if (SelectedSurveyId.HasValue)
+        {
+            q = q.Where(s => s.Id == SelectedSurveyId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(SelectedSampleId))
+        {
+            q = q.Where(s => s.SampleId.Equals(SelectedSampleId, StringComparison.OrdinalIgnoreCase));
+        }
+
         // search
         if (!string.IsNullOrWhiteSpace(SearchText))
         {
@@ -477,7 +681,8 @@
             s.Id.ToString().Contains(t) ||
             s.Title.ToLowerInvariant().Contains(t) ||
             s.OmbNumber.ToLowerInvariant().Contains(t) ||
-            s.SampleName.ToLowerInvariant().Contains(t));
+            s.SampleName.ToLowerInvariant().Contains(t) ||
+            s.SampleId.ToLowerInvariant().Contains(t));
         }
 
         if (StatusSelections.Count > 0)
@@ -530,55 +735,6 @@
         _ => "pill-notstarted"
     };
 
-    private void GenerateAdditionalSurveys(int targetCount)
-    {
-        var titles = new[]
-        {
-"Grain Stocks Survey",
-"Livestock Slaughter Report",
-"Hogs and Pigs Survey",
-"Acreage Report",
-"Cotton Objective Yield Survey",
-"Cattle Inventory Survey",
-"Milk Production Survey",
-"Rice Stocks Survey",
-"Vegetable Production Survey",
-"Fruit Chemical Use Survey"
-};
-
-        var statuses = new[] { "Not started", "In progress", "Blocked", "Overdue" };
-        var states = new[] { "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", "PR" };
-        var modes = new[] { "CAWI", "CATI", "CAPI", "Paper" };
-
-        int nextId = SurveyRows.Max(s => s.Id) + 1;
-        var rand = new Random(42);
-
-        while (SurveyRows.Count < targetCount)
-        {
-            var title = titles[rand.Next(titles.Length)];
-            var year = rand.Next(2025, 2028);
-
-            var surveyDate = new DateTime(year, rand.Next(1, 13), rand.Next(1, 25));
-            var startDate = surveyDate.AddDays(rand.Next(0, 5));
-            var stopDate = startDate.AddDays(rand.Next(20, 120));
-
-            SurveyRows.Add(new SurveyRow(
-            nextId++,
-            surveyDate,
-            $"{title} ({year})",
-            $"0535-{rand.Next(1000, 9999)}",
-            surveyDate.AddYears(rand.Next(2, 4)),
-            $"{title.Split(' ')[0]} Frame {year}",
-            startDate,
-            stopDate,
-            statuses[rand.Next(statuses.Length)],
-            states[rand.Next(states.Length)],
-            "N/A",
-            modes[rand.Next(modes.Length)]
-            ));
-        }
-    }
-
     private IEnumerable<FilterChip> AppliedFilterChips => BuildFilterChips();
     private int FilterAppliedCount => AppliedFilterChips.Count();
 
@@ -590,6 +746,15 @@
         chips.AddRange(ModeSelections.Select(m => new FilterChip(m, () => ModeSelections.Remove(m))));
         chips.AddRange(StatusSelections.Select(s => new FilterChip(s, () => StatusSelections.Remove(s))));
         chips.AddRange(YearSelections.Select(y => new FilterChip(y, () => YearSelections.Remove(y))));
+
+        if (SelectedReferenceDate.HasValue)
+            chips.Add(new FilterChip($"Ref: {SelectedReferenceDate.Value:yyyy-MM-dd}", () => SelectedReferenceDate = null));
+
+        if (SelectedSurveyId.HasValue)
+            chips.Add(new FilterChip($"Survey: {SelectedSurveyId}", () => SelectedSurveyId = null));
+
+        if (!string.IsNullOrWhiteSpace(SelectedSampleId))
+            chips.Add(new FilterChip($"Sample: {SelectedSampleId}", () => SelectedSampleId = null));
 
         if (StartDateFilter.HasValue)
             chips.Add(new FilterChip(StartDateFilter.Value.ToString("yyyy-MM-dd"), () => StartDateFilter = null));
@@ -636,5 +801,363 @@
         {
             set.Remove(value);
         }
+    }
+
+    private bool CanViewDetails =>
+        SelectedReferenceDate.HasValue &&
+        SelectedSurveyId.HasValue &&
+        !string.IsNullOrWhiteSpace(SelectedSampleId);
+
+    private string SelectedSurveyIdString => SelectedSurveyId?.ToString() ?? "";
+
+    private async Task OnReferenceDateChanged()
+    {
+        await RefreshFilterOptionsAsync();
+    }
+
+    private async Task OnSurveyIdChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var parsed))
+        {
+            SelectedSurveyId = parsed;
+        }
+        else
+        {
+            SelectedSurveyId = null;
+        }
+
+        await RefreshFilterOptionsAsync();
+    }
+
+    private async Task OnSampleIdChanged(ChangeEventArgs e)
+    {
+        SelectedSampleId = e.Value?.ToString();
+        await RefreshFilterOptionsAsync();
+    }
+
+    private async Task RefreshFilterOptionsAsync()
+    {
+        OptionsMessage = null;
+        var options = await FetchFilterOptionsAsync();
+        if (options is null)
+        {
+            OptionsMessage = "Unable to load selection options. Please try again.";
+            return;
+        }
+
+        AvailableReferenceDates = options.AvailableReferenceDates;
+        AvailableSurveyIds = options.AvailableSurveyIds;
+        AvailableSampleIds = options.AvailableSampleIds;
+
+        var cleared = false;
+        if (SelectedReferenceDate.HasValue &&
+            !AvailableReferenceDates.Contains(SelectedReferenceDate.Value.ToString("yyyy-MM-dd")))
+        {
+            SelectedReferenceDate = null;
+            cleared = true;
+        }
+
+        if (SelectedSurveyId.HasValue &&
+            !AvailableSurveyIds.Contains(SelectedSurveyId.Value))
+        {
+            SelectedSurveyId = null;
+            cleared = true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(SelectedSampleId) &&
+            !AvailableSampleIds.Contains(SelectedSampleId))
+        {
+            SelectedSampleId = null;
+            cleared = true;
+        }
+
+        if (cleared)
+        {
+            options = await FetchFilterOptionsAsync();
+            if (options is not null)
+            {
+                AvailableReferenceDates = options.AvailableReferenceDates;
+                AvailableSurveyIds = options.AvailableSurveyIds;
+                AvailableSampleIds = options.AvailableSampleIds;
+            }
+        }
+
+        if (AvailableReferenceDates.Count == 0 ||
+            AvailableSurveyIds.Count == 0 ||
+            AvailableSampleIds.Count == 0)
+        {
+            OptionsMessage = "No matches found for the current selections.";
+        }
+    }
+
+    private async Task<app_blazor.Services.FilterOptionsResponse?> FetchFilterOptionsAsync()
+    {
+        var client = HttpClientFactory.CreateClient();
+        client.BaseAddress = new Uri(Navigation.BaseUri);
+
+        var query = new List<string>();
+        if (SelectedReferenceDate.HasValue)
+            query.Add($"referenceDate={SelectedReferenceDate.Value:yyyy-MM-dd}");
+        if (SelectedSurveyId.HasValue)
+            query.Add($"surveyId={SelectedSurveyId.Value}");
+        if (!string.IsNullOrWhiteSpace(SelectedSampleId))
+            query.Add($"sampleId={Uri.EscapeDataString(SelectedSampleId)}");
+
+        var url = "api/survey-instances/filter-options";
+        if (query.Count > 0)
+            url += "?" + string.Join("&", query);
+
+        return await client.GetFromJsonAsync<app_blazor.Services.FilterOptionsResponse>(url);
+    }
+
+    private string BuildDetailsHref(SurveyRow row)
+    {
+        var parts = new List<string>
+        {
+            $"referenceDate={row.ReferenceDate:yyyy-MM-dd}",
+            $"surveyId={row.Id}",
+            $"sampleId={Uri.EscapeDataString(row.SampleId)}"
+        };
+
+        return $"/surveys/details?{string.Join("&", parts)}";
+    }
+
+    private string RowKey(SurveyRow row) => $"{row.Id}|{row.SampleId}|{row.ReferenceDate:yyyy-MM-dd}";
+
+    private RowEditState GetRowState(SurveyRow row)
+    {
+        var key = RowKey(row);
+        if (!RowEdits.TryGetValue(key, out var state))
+        {
+            state = new RowEditState
+            {
+                EnumeratorId = row.EnumeratorId,
+                ManagerId = row.ManagerId,
+                CoachId = row.CoachId,
+                EnumeratorNotes = row.EnumeratorNotes
+            };
+            RowEdits[key] = state;
+        }
+
+        return state;
+    }
+
+    private string GetEditValue(SurveyRow row, string field)
+    {
+        var state = GetRowState(row);
+        return field switch
+        {
+            nameof(RowEditState.EnumeratorId) => state.EnumeratorId ?? "",
+            nameof(RowEditState.ManagerId) => state.ManagerId ?? "",
+            nameof(RowEditState.CoachId) => state.CoachId ?? "",
+            nameof(RowEditState.EnumeratorNotes) => state.EnumeratorNotes ?? "",
+            _ => ""
+        };
+    }
+
+    private void OnFieldChanged(SurveyRow row, string field, string? value)
+    {
+        var state = GetRowState(row);
+        switch (field)
+        {
+            case nameof(RowEditState.EnumeratorId):
+                state.EnumeratorId = value ?? "";
+                break;
+            case nameof(RowEditState.ManagerId):
+                state.ManagerId = value ?? "";
+                break;
+            case nameof(RowEditState.CoachId):
+                state.CoachId = value ?? "";
+                break;
+            case nameof(RowEditState.EnumeratorNotes):
+                state.EnumeratorNotes = value ?? "";
+                break;
+        }
+
+        state.DirtyFields.Add(field);
+    }
+
+    private bool IsDirty(SurveyRow row, string field) =>
+        GetRowState(row).DirtyFields.Contains(field);
+
+    private bool IsRowDirty(SurveyRow row) =>
+        GetRowState(row).DirtyFields.Count > 0;
+
+    private void SaveRow(SurveyRow row)
+    {
+        var state = GetRowState(row);
+        if (state.DirtyFields.Count == 0)
+            return;
+
+        var oldEnum = row.EnumeratorId;
+        var oldMgr = row.ManagerId;
+        var oldCoach = row.CoachId;
+
+        var updatedRow = row with
+        {
+            EnumeratorId = state.EnumeratorId ?? "",
+            ManagerId = state.ManagerId ?? "",
+            CoachId = state.CoachId ?? "",
+            EnumeratorNotes = state.EnumeratorNotes ?? ""
+        };
+
+        ReplaceRow(row, updatedRow);
+        state.DirtyFields.Clear();
+
+        var changes = new List<UndoChange>();
+        if (oldEnum != updatedRow.EnumeratorId)
+            changes.Add(new UndoChange(RowKey(row), nameof(RowEditState.EnumeratorId), oldEnum, updatedRow.EnumeratorId));
+        if (oldMgr != updatedRow.ManagerId)
+            changes.Add(new UndoChange(RowKey(row), nameof(RowEditState.ManagerId), oldMgr, updatedRow.ManagerId));
+        if (oldCoach != updatedRow.CoachId)
+            changes.Add(new UndoChange(RowKey(row), nameof(RowEditState.CoachId), oldCoach, updatedRow.CoachId));
+
+        if (changes.Count > 0)
+        {
+            UndoStack.Add(new UndoTransaction(changes));
+            UndoMessage = "Changes saved. You can undo the last update.";
+        }
+    }
+
+    private void ReplaceRow(SurveyRow original, SurveyRow updated)
+    {
+        var index = SurveyRows.IndexOf(original);
+        if (index >= 0)
+            SurveyRows[index] = updated;
+
+        var key = RowKey(original);
+        if (RowEdits.TryGetValue(key, out var state))
+        {
+            state.EnumeratorId = updated.EnumeratorId;
+            state.ManagerId = updated.ManagerId;
+            state.CoachId = updated.CoachId;
+            state.EnumeratorNotes = updated.EnumeratorNotes;
+        }
+    }
+
+    private bool IsSelected(SurveyRow row) => SelectedKeys.Contains(RowKey(row));
+
+    private void ToggleSelectRow(SurveyRow row, ChangeEventArgs e)
+    {
+        var key = RowKey(row);
+        if (e.Value is bool isChecked && isChecked)
+            SelectedKeys.Add(key);
+        else
+            SelectedKeys.Remove(key);
+    }
+
+    private bool IsAllSelected => FilteredRows.Count > 0 && FilteredRows.All(r => SelectedKeys.Contains(RowKey(r)));
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        if (e.Value is bool isChecked && isChecked)
+        {
+            foreach (var row in FilteredRows)
+                SelectedKeys.Add(RowKey(row));
+        }
+        else
+        {
+            foreach (var row in FilteredRows)
+                SelectedKeys.Remove(RowKey(row));
+        }
+    }
+
+    private bool HasSelection => SelectedKeys.Count > 0;
+
+    private async Task ApplyBulkUpdateAsync()
+    {
+        if (!HasSelection)
+            return;
+
+        var confirmed = await Js.InvokeAsync<bool>("confirm", "Apply bulk update to selected records?");
+        if (!confirmed)
+            return;
+
+        var changes = new List<UndoChange>();
+        foreach (var row in SurveyRows.Where(r => SelectedKeys.Contains(RowKey(r))))
+        {
+            var updated = row;
+            if (!string.IsNullOrWhiteSpace(BulkEnumeratorId) && row.EnumeratorId != BulkEnumeratorId)
+            {
+                changes.Add(new UndoChange(RowKey(row), nameof(RowEditState.EnumeratorId), row.EnumeratorId, BulkEnumeratorId));
+                updated = updated with { EnumeratorId = BulkEnumeratorId };
+            }
+            if (!string.IsNullOrWhiteSpace(BulkManagerId) && row.ManagerId != BulkManagerId)
+            {
+                changes.Add(new UndoChange(RowKey(row), nameof(RowEditState.ManagerId), row.ManagerId, BulkManagerId));
+                updated = updated with { ManagerId = BulkManagerId };
+            }
+            if (!string.IsNullOrWhiteSpace(BulkCoachId) && row.CoachId != BulkCoachId)
+            {
+                changes.Add(new UndoChange(RowKey(row), nameof(RowEditState.CoachId), row.CoachId, BulkCoachId));
+                updated = updated with { CoachId = BulkCoachId };
+            }
+
+            if (!ReferenceEquals(updated, row))
+                ReplaceRow(row, updated);
+        }
+
+        if (changes.Count > 0)
+        {
+            UndoStack.Add(new UndoTransaction(changes));
+            UndoMessage = "Bulk update applied. You can undo the last update.";
+        }
+    }
+
+    private bool CanUndo => UndoStack.Count > 0;
+
+    private void UndoLast()
+    {
+        if (UndoStack.Count == 0)
+            return;
+
+        var last = UndoStack[^1];
+        UndoStack.RemoveAt(UndoStack.Count - 1);
+
+        foreach (var change in last.Changes)
+        {
+            var row = SurveyRows.FirstOrDefault(r => RowKey(r) == change.RowKey);
+            if (row is null)
+                continue;
+
+            var updated = change.FieldName switch
+            {
+                nameof(RowEditState.EnumeratorId) => row with { EnumeratorId = change.OldValue },
+                nameof(RowEditState.ManagerId) => row with { ManagerId = change.OldValue },
+                nameof(RowEditState.CoachId) => row with { CoachId = change.OldValue },
+                _ => row
+            };
+
+            ReplaceRow(row, updated);
+        }
+
+        UndoMessage = "Last update has been reverted.";
+    }
+
+    private sealed class RowEditState
+    {
+        public string? EnumeratorId { get; set; }
+        public string? ManagerId { get; set; }
+        public string? CoachId { get; set; }
+        public string? EnumeratorNotes { get; set; }
+        public HashSet<string> DirtyFields { get; } = new(StringComparer.Ordinal);
+    }
+
+    private sealed record UndoChange(string RowKey, string FieldName, string OldValue, string NewValue);
+    private sealed record UndoTransaction(List<UndoChange> Changes);
+
+    private string BuildExportUrl()
+    {
+        var parts = new List<string>();
+        if (SelectedReferenceDate.HasValue)
+            parts.Add($"referenceDate={SelectedReferenceDate.Value:yyyy-MM-dd}");
+        if (SelectedSurveyId.HasValue)
+            parts.Add($"surveyId={SelectedSurveyId.Value}");
+        if (!string.IsNullOrWhiteSpace(SelectedSampleId))
+            parts.Add($"sampleId={Uri.EscapeDataString(SelectedSampleId)}");
+
+        return parts.Count == 0
+            ? "/api/survey-instances/export"
+            : $"/api/survey-instances/export?{string.Join("&", parts)}";
     }
 }

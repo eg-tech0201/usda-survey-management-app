@@ -48,6 +48,11 @@
     padding-right: 0;
 }
 
+.search-input-row {
+    position: relative;
+    margin-top: 0.7rem;
+}
+
 .search-input {
     width: 100%;
     border: 1px solid transparent;
@@ -174,6 +179,46 @@
     padding: 0.45rem 0.6rem;
     font-weight: 800;
     color: var(--brand-navy);
+}
+
+.selector-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+    gap: 0.6rem;
+    padding: 0.75rem 0.75rem 0.6rem 0.75rem;
+    border: 1px solid transparent;
+    background:
+        linear-gradient(180deg, #ffffff, #f2f8f5) padding-box,
+        linear-gradient(135deg, #0f4f2c, #55b07a 40%, #bfe9cf 70%, #0b2b4b) border-box;
+    border-radius: 18px;
+    box-shadow: 0 10px 22px rgba(11, 43, 75, 0.08);
+}
+
+.selector-row-compact {
+    margin-bottom: 0.35rem;
+}
+
+.selector-field {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.selector-label {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--brand-muted);
+}
+
+.selector-actions {
+    display: flex;
+    align-items: flex-end;
+}
+
+.selector-message {
+    margin-top: 0.5rem;
+    font-weight: 700;
+    color: var(--brand-muted);
 }
 
 /* filters popover */
@@ -391,11 +436,11 @@
 
 /* KEY: collapse so vertical grid lines render consistently */
 .table-surveys {
-    width: 100%;
+    width: max-content;
     border-collapse: collapse;
     /* <-- change from separate */
     font-size: 0.92rem;
-    min-width: 100%;
+    min-width: max-content;
     table-layout: auto;
 }
 
@@ -409,9 +454,10 @@
     background: #5a9772;
     color: #ffffff;
 
-    padding: 0.75rem 0.65rem;
+    padding: 0.6rem 0.55rem;
     text-align: left;
     font-weight: 900;
+    white-space: nowrap;
 
     border-bottom: 2px solid rgba(11, 43, 75, 0.45);
     border-right: 2px solid rgba(255, 255, 255, 0.9);
@@ -425,38 +471,100 @@
 
 /* Body cells with both vertical + horizontal lines */
 .table-surveys td {
-    padding: 0.65rem 0.65rem;
+    padding: 0.5rem 0.55rem;
     border-bottom: 2px solid rgba(11, 43, 75, 0.28);
     border-right: 2px solid rgba(11, 43, 75, 0.24);
     vertical-align: top;
     background: #fff;
     /* helps grid lines show cleanly */
     transition: background-color 120ms ease;
+    white-space: nowrap;
+}
+
+.select-col {
+    width: 42px;
+    text-align: center;
+}
+
+.cell-edit {
+    width: 1%;
+}
+
+.grid-input {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid var(--brand-border);
+    border-radius: 10px;
+    padding: 0.35rem 0.5rem;
+    font-weight: 700;
+    color: var(--brand-navy);
+    background: #ffffff;
+    white-space: nowrap;
+}
+
+.grid-input.dirty {
+    background: #fff7dd;
+    border-color: #d4a100;
+}
+
+.bulk-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.6rem 0 1rem 0;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--brand-border);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--brand-navy) 3%, white);
+}
+
+.bulk-title {
+    font-weight: 800;
+    color: var(--brand-navy);
+}
+
+.undo-message {
+    color: var(--brand-muted);
+    font-weight: 700;
 }
 
 .table-surveys td:last-child {
     border-right: none;
 }
 
-.table-surveys tbody tr:hover {
+.table-surveys tbody tr:hover,
+.table-surveys tbody tr.survey-row:hover {
     background: rgba(31, 111, 63, 0.08);
 }
 
-.table-surveys tbody tr:hover td {
+.table-surveys tbody tr:hover td,
+.table-surveys tbody tr.survey-row:hover td {
     background: rgba(31, 111, 63, 0.08);
+}
+
+.table-surveys tbody tr.survey-row {
+    cursor: pointer;
 }
 
 .td-id {
     font-weight: 900;
     color: var(--brand-navy);
-    width: 64px;
     white-space: nowrap;
 }
 
 .td-title {
     font-weight: 800;
     color: var(--brand-navy);
-    min-width: 320px;
+}
+
+.survey-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.survey-link:hover {
+    text-decoration: underline;
 }
 
 /* status pill */
@@ -515,5 +623,19 @@
 
     .search-shell {
         max-width: 100%;
+    }
+}
+
+@media (max-width: 720px) {
+    .selector-row {
+        grid-template-columns: 1fr;
+    }
+
+    .selector-actions {
+        justify-content: flex-start;
+    }
+
+    .search-input-row {
+        margin-top: 0.4rem;
     }
 }

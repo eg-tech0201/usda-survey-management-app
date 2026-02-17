@@ -1,54 +1,112 @@
+@page "/surveys/details"
 @page "/surveys/details/{SurveyId:int?}"
+@inject NavigationManager Navigation
+@inject IHttpClientFactory HttpClientFactory
 
 <h1>Survey Details</h1>
+
+<div class="d-flex justify-content-end mb-3">
+    <a class="btn btn-outline-primary"
+       href="@BuildDetailExportUrl()">Export CSV</a>
+</div>
 
 <ul class="nav nav-tabs mb-3">
     <li class="nav-item">
         <button class='nav-link @(ActiveTab == "Overview" ? "active" : "")' @onclick='@(() => SetTab("Overview"))'>Overview</button>
     </li>
     <li class="nav-item">
-        <button class='nav-link @(ActiveTab == "Assignments" ? "active" : "")' @onclick='@(() => SetTab("Assignments"))'>Assignments</button>
+        <button class='nav-link @(ActiveTab == "Counts" ? "active" : "")' @onclick='@(() => SetTab("Counts"))'>Counts</button>
+    </li>
+    <li class="nav-item">
+        <button class='nav-link @(ActiveTab == "FullRecord" ? "active" : "")' @onclick='@(() => SetTab("FullRecord"))'>Full Record</button>
     </li>
 </ul>
 
-@if (ActiveTab == "Overview")
+@if (IsLoading)
+{
+    <div class="alert alert-info">Loading survey details...</div>
+}
+else if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <div class="alert alert-warning">@ErrorMessage</div>
+}
+else if (Detail is null)
+{
+    <div class="alert alert-warning">No survey detail found for the selected instance.</div>
+}
+else if (ActiveTab == "Overview")
 {
     <div class="card mb-3">
+        <div class="card-header">Survey Info</div>
         <div class="card-body">
-            <div class="row">
-                <div class="col-md-4"><strong>Survey ID:</strong> @SelectedSurvey.Id</div>
-                <div class="col-md-8"><strong>Title:</strong> @SelectedSurvey.Title</div>
-            </div>
-            <div class="row mt-2">
-                <div class="col-md-4"><strong>OMB:</strong> @SelectedSurvey.OmbNumber</div>
-                <div class="col-md-4"><strong>Status:</strong> @SelectedSurvey.Status</div>
-                <div class="col-md-4"><strong>Sample:</strong> @SelectedSurvey.SampleName</div>
+            <div class="row g-3">
+                <div class="col-md-4"><strong>Sample ID:</strong> @Detail.SampleId</div>
+                <div class="col-md-8"><strong>Sample Name:</strong> @Detail.SampleName</div>
+                <div class="col-md-4"><strong>Survey ID:</strong> @Detail.SurveyId</div>
+                <div class="col-md-8"><strong>Title:</strong> @Detail.Title</div>
+                <div class="col-md-8"><strong>Sub Title:</strong> @Detail.SubTitle</div>
+                <div class="col-md-4"><strong>Survey Frequency:</strong> @Detail.SurveyFrequency</div>
+                <div class="col-md-4"><strong>Version:</strong> @Detail.Version</div>
+                <div class="col-md-4"><strong>Survey Date:</strong> @Detail.SurveyDate.ToString("yyyy-MM-dd")</div>
+                <div class="col-md-4"><strong>Reference Date:</strong> @Detail.ReferenceDate.ToString("yyyy-MM-dd")</div>
+                <div class="col-md-4"><strong>HQ Survey Admin:</strong> @Detail.HqSurveyAdmin</div>
+                <div class="col-md-4"><strong>Project Code:</strong> @Detail.ProjectCode</div>
+                <div class="col-md-4"><strong>Survey Start:</strong> @Detail.SurveyStartDate.ToString("yyyy-MM-dd")</div>
+                <div class="col-md-4"><strong>Survey Stop:</strong> @Detail.SurveyStopDate.ToString("yyyy-MM-dd")</div>
             </div>
         </div>
     </div>
 
     <div class="card">
-        <div class="card-header">Linked OMB Docket</div>
-        <div class="card-body">
-            <div class="row g-3 align-items-end">
-                <div class="col-12 col-md-6">
-                    <label class="form-label">Approved Dockets</label>
-                    <select class="form-select" @bind="SelectedDocketId">
-                        @foreach (var docket in ApprovedDockets)
+        <div class="card-header">Available Modes</div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mode</th>
+                            <th>Start Date</th>
+                            <th>Stop Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var mode in Detail.Modes)
                         {
-                            <option value="@docket.DocketId">@docket.DocketId — @docket.Title</option>
+                            <tr>
+                                <td>@mode.Mode</td>
+                                <td>@mode.StartDate.ToString("yyyy-MM-dd")</td>
+                                <td>@mode.StopDate.ToString("yyyy-MM-dd")</td>
+                            </tr>
                         }
-                    </select>
-                </div>
-                <div class="col-12 col-md-3">
-                    <label class="form-label">Status</label>
-                    <div>
-                        <span class="badge bg-success">Approved</span>
-                    </div>
-                </div>
-                <div class="col-12 col-md-3">
-                    <button class="btn btn-primary w-100" type="button">Save Association</button>
-                </div>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else if (ActiveTab == "FullRecord")
+{
+    <div class="card">
+        <div class="card-header">Full Record</div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Field</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var field in Detail.FullRecord)
+                        {
+                            <tr>
+                                <td>@field.Field</td>
+                                <td>@field.Value</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -56,32 +114,51 @@
 else
 {
     <div class="card mb-3">
-        <div class="card-header">Assignments</div>
+        <div class="card-header">Survey Counts by OpDom Status</div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Name</th>
-                            <th>Role</th>
-                            <th>Notes</th>
-                            <th>CAWI</th>
-                            <th>CATI</th>
-                            <th>CAPI</th>
-                            <th>Paper</th>
+                            <th>Status</th>
+                            <th>Definition</th>
+                            <th>Count</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var member in Assignments)
+                        @foreach (var item in Detail.OpDomCounts)
                         {
                             <tr>
-                                <td>@member.Name</td>
-                                <td>@member.Role</td>
-                                <td>@member.Notes</td>
-                                <td><input type="checkbox" checked="@member.Cawi" /></td>
-                                <td><input type="checkbox" checked="@member.Cati" /></td>
-                                <td><input type="checkbox" checked="@member.Capi" /></td>
-                                <td><input type="checkbox" checked="@member.Paper" /></td>
+                                <td>@item.Code</td>
+                                <td class="text-muted">@item.Definition</td>
+                                <td>@item.Count</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">Survey Counts by DCMS Code</div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Code</th>
+                            <th>Definition</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Detail.DcmsCounts)
+                        {
+                            <tr>
+                                <td>@item.Code</td>
+                                <td class="text-muted">@item.Definition</td>
+                                <td>@item.Count</td>
                             </tr>
                         }
                     </tbody>
@@ -91,16 +168,12 @@ else
     </div>
 
     <div class="card">
-        <div class="card-header">Tools Enabled</div>
+        <div class="card-header">Totals</div>
         <div class="card-body">
-            <div class="d-flex flex-wrap gap-3">
-                @foreach (var tool in Tools)
-                {
-                    <label class="form-check-label">
-                        <input type="checkbox" class="form-check-input me-1" checked="@tool.Enabled" />
-                        @tool.Name
-                    </label>
-                }
+            <div class="row g-3">
+                <div class="col-md-4"><strong>Total Received:</strong> @Detail.TotalReceived</div>
+                <div class="col-md-4"><strong>Total Deleted:</strong> @Detail.TotalDeleted</div>
+                <div class="col-md-4"><strong>Budget Allocation:</strong> @Detail.BudgetAllocation.ToString("C0")</div>
             </div>
         </div>
     </div>
@@ -108,52 +181,55 @@ else
 
 @code {
     [Parameter] public int? SurveyId { get; set; }
-
-    private record SurveyRow(int Id, string Title, string OmbNumber, string Status, string SampleName);
-    private record DocketRow(string DocketId, string Title, string Status);
-    private record AssignmentRow(string Name, string Role, string Notes, bool Cawi, bool Cati, bool Capi, bool Paper);
-    private record ToolRow(string Name, bool Enabled);
+    [SupplyParameterFromQuery(Name = "surveyId")] public int? SurveyIdQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "sampleId")] public string? SampleId { get; set; }
+    [SupplyParameterFromQuery(Name = "referenceDate")] public string? ReferenceDate { get; set; }
 
     private string ActiveTab { get; set; } = "Overview";
+    private app_blazor.Services.SurveyInstanceDetailResponse? Detail { get; set; }
+    private string? ErrorMessage { get; set; }
+    private bool IsLoading { get; set; }
 
-    private readonly List<SurveyRow> Surveys = new()
+    protected override async Task OnParametersSetAsync()
     {
-        new(1001, "Crop Yield Survey (CY-2026)", "0535-0123", "In progress", "CY-2026 Core Sample"),
-        new(1002, "Agricultural Census Pilot (ACP)", "0535-0456", "Blocked", "ACP Pilot Frame"),
-        new(1003, "Farm Labor Study (FLS)", "0535-0789", "In progress", "FLS 2026 Sample"),
-        new(1004, "Dairy Inventory Survey (DIS)", "0535-0321", "Overdue", "DIS Monthly Frame")
-    };
+        ErrorMessage = null;
+        Detail = null;
 
-    private readonly List<DocketRow> Dockets = new()
-    {
-        new("OMB-2026-001", "Crop Yield Survey OMB Renewal", "Approved"),
-        new("OMB-2026-099", "Irrigation & Water Use", "Approved"),
-        new("OMB-2026-014", "Agricultural Census Pilot", "Pending")
-    };
+        var surveyId = SurveyIdQuery ?? SurveyId;
+        if (!surveyId.HasValue || string.IsNullOrWhiteSpace(SampleId) || string.IsNullOrWhiteSpace(ReferenceDate))
+        {
+            ErrorMessage = "Select Reference Date, Survey ID, and Sample ID on the Surveys page to view details.";
+            return;
+        }
 
-    private readonly List<AssignmentRow> Assignments = new()
-    {
-        new("A. Chen", "Survey Lead", "Primary lead", true, true, false, false),
-        new("M. Lewis", "Coordinator", "Schedule updates", true, false, true, true),
-        new("D. Khan", "Analyst", "Metadata review", true, true, false, false)
-    };
+        IsLoading = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient();
+            client.BaseAddress = new Uri(Navigation.BaseUri);
 
-    private readonly List<ToolRow> Tools = new()
-    {
-        new("CAPI", true),
-        new("CATI", true),
-        new("CAWI", true),
-        new("Paper", false),
-        new("Secure Transfer", true)
-    };
-
-    private string SelectedDocketId { get; set; } = "OMB-2026-001";
-
-    private SurveyRow SelectedSurvey =>
-        Surveys.FirstOrDefault(s => s.Id == SurveyId) ?? Surveys.First();
-
-    private IEnumerable<DocketRow> ApprovedDockets =>
-        Dockets.Where(d => d.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase));
+            var url =
+                $"api/survey-instances/detail?referenceDate={Uri.EscapeDataString(ReferenceDate)}&surveyId={surveyId.Value}&sampleId={Uri.EscapeDataString(SampleId)}";
+            Detail = await client.GetFromJsonAsync<app_blazor.Services.SurveyInstanceDetailResponse>(url);
+        }
+        catch
+        {
+            ErrorMessage = "Unable to load survey details. Please try again.";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
 
     private void SetTab(string tab) => ActiveTab = tab;
+
+    private string BuildDetailExportUrl()
+    {
+        var surveyId = SurveyIdQuery ?? SurveyId;
+        if (!surveyId.HasValue || string.IsNullOrWhiteSpace(SampleId) || string.IsNullOrWhiteSpace(ReferenceDate))
+            return "#";
+
+        return $"/api/survey-instances/detail-export?referenceDate={Uri.EscapeDataString(ReferenceDate)}&surveyId={surveyId.Value}&sampleId={Uri.EscapeDataString(SampleId)}";
+    }
 }
