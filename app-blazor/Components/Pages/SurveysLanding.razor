@@ -1,8 +1,8 @@
 @page "/surveys"
 @inject NavigationManager Navigation
 @inject IJSRuntime Js
-@inject IHttpClientFactory HttpClientFactory
 @inject app_blazor.Services.SurveyInstanceService SurveyInstanceService
+@inject app_blazor.Services.UserRecentSurveyService RecentSurveyService
 
 <h1 class="page-h1">Surveys</h1>
 
@@ -13,47 +13,11 @@
             <div class="filters-backdrop" @onclick="CloseFilters"></div>
         }
         <div class="search-shell" @ref="_filtersAnchor">
-            <div class="selector-row">
-                <div class="selector-field">
-                    <label class="selector-label">Reference Date</label>
-                    <InputDate class="select-lite"
-                               @bind-Value="SelectedReferenceDate"
-                               @bind-Value:after="OnReferenceDateChanged" />
-                </div>
-                <div class="selector-field">
-                    <label class="selector-label">Survey ID</label>
-                    <select class="select-lite"
-                            value="@SelectedSurveyIdString"
-                            @onchange="OnSurveyIdChanged">
-                        <option value="">Select survey</option>
-                        @foreach (var id in AvailableSurveyIds)
-                        {
-                            <option value="@id">@id</option>
-                        }
-                    </select>
-                </div>
-                <div class="selector-field">
-                    <label class="selector-label">Sample ID</label>
-                    <select class="select-lite"
-                            value="@SelectedSampleId"
-                            @onchange="OnSampleIdChanged">
-                        <option value="">Select sample</option>
-                        @foreach (var sample in AvailableSampleIds)
-                        {
-                            <option value="@sample">@sample</option>
-                        }
-                    </select>
-                </div>
-                <div class="selector-actions">
-                    <button class="button-primary" type="submit" disabled="@(!CanViewDetails)">View Details / Search</button>
-                </div>
-            </div>
-
             <div class="search-input-row">
                 <button class="search-icon-button" type="submit" title="Search">
                     <span class="bi bi-search" aria-hidden="true"></span>
                 </button>
-                <input class="survey-search search-input" placeholder="Search survey list (ID / title / OMB / sample)…"
+                <input class="survey-search search-input" placeholder="Search survey list (ID / title)"
                        @bind="SearchText" @bind:event="oninput" />
 
                 <button class="search-filter-button" type="button" @onclick="ToggleFilters" title="Filters">
@@ -65,6 +29,18 @@
                     }
                 </button>
             </div>
+            @if (AppliedFilterChips.Any())
+            {
+                <div class="search-chips search-chips-persistent">
+                    @foreach (var chip in AppliedFilterChips)
+                    {
+                        <button type="button" class="chip" @onclick="chip.OnRemove">
+                            <span class="chip-x">×</span>
+                            <span>@chip.Label</span>
+                        </button>
+                    }
+                </div>
+            }
 
             @if (ShowFilters)
             {
@@ -90,6 +66,33 @@
                         <div class="filters-inline">
                             <InputDate class="select-lite" @bind-Value="StartDateFilter" />
                             <InputDate class="select-lite" @bind-Value="StopDateFilter" />
+                        </div>
+                    </div>
+
+                    <div class="filters-group">
+                        <div class="filters-subtitle">Reference Date</div>
+                        <div class="filters-inline">
+                            <InputSelect class="select-lite" @bind-Value="ReferenceMonth" @bind-Value:after="OnReferenceDatePartChanged">
+                                <option value="">MM</option>
+                                @foreach (var month in ReferenceMonthOptions)
+                                {
+                                    <option value="@month">@month</option>
+                                }
+                            </InputSelect>
+                            <InputSelect class="select-lite" @bind-Value="ReferenceDay" @bind-Value:after="OnReferenceDatePartChanged">
+                                <option value="">DD</option>
+                                @foreach (var day in ReferenceDayOptions)
+                                {
+                                    <option value="@day">@day</option>
+                                }
+                            </InputSelect>
+                            <InputSelect class="select-lite" @bind-Value="ReferenceYear" @bind-Value:after="OnReferenceDatePartChanged">
+                                <option value="">YYYY</option>
+                                @foreach (var year in ReferenceYearOptions)
+                                {
+                                    <option value="@year">@year</option>
+                                }
+                            </InputSelect>
                         </div>
                     </div>
 
@@ -149,21 +152,6 @@
                         </div>
                     </div>
 
-                    <div class="filters-group">
-                        <div class="filters-subtitle">Year</div>
-                        <div class="filters-checks">
-                            @foreach (var y in Years)
-                            {
-                                <label class="check-pill">
-                                    <input type="checkbox"
-                                           checked="@YearSelections.Contains(y)"
-                                           @onchange="e => ToggleSelection(YearSelections, y, e)" />
-                                    <span>@y</span>
-                                </label>
-                            }
-                        </div>
-                    </div>
-
                     <div class="filters-actions">
                         <button class="button-lite" type="button" @onclick="ClearFilters">Clear</button>
                         <button class="button-primary" type="button" @onclick="CloseFilters">Done</button>
@@ -171,10 +159,6 @@
                 </div>
             }
         </div>
-        @if (!string.IsNullOrWhiteSpace(OptionsMessage))
-        {
-            <div class="selector-message">@OptionsMessage</div>
-        }
     </div>
 </form>
 
@@ -183,36 +167,10 @@
     <span class="search-hint-text">or refine with filters.</span>
 </div>
 
-<section class="stats-panel">
-    <div class="stats-header">Statistics</div>
-    <div class="stats-grid">
-        <div class="stat-tile">
-        <div class="stat-label">Number of survey instruments served to date:</div>
-            <div class="stat-value">0</div>
-        </div>
-        <div class="stat-tile">
-        <div class="stat-label">Number of respondents sampled to date:</div>
-            <div class="stat-value">3,562,523</div>
-        </div>
-        <div class="stat-tile">
-        <div class="stat-label">Number of responses to date:</div>
-            <div class="stat-value">1,097,260</div>
-        </div>
-        <div class="stat-tile">
-        <div class="stat-label">Response rate to date:</div>
-            <div class="stat-value">5.4417%</div>
-        </div>
-        <div class="stat-tile">
-        <div class="stat-label">Average customer experience:</div>
-            <div class="stat-value">Not available</div>
-        </div>
-    </div>
-</section>
-
 <section class="recent-surveys-panel">
     <div class="panel-title-row">
-        <div class="panel-title">Recent Surveys</div>
-        <a class="panel-title-link" href="/surveys/results">View all</a>
+        <div class="panel-title">My Recent Surveys</div>
+        <a class="button-lite" href="/surveys/results">View all</a>
     </div>
     @if (RecentSurveyInstances.Count == 0)
     {
@@ -259,7 +217,6 @@
     private DateTime? StopDateFilter { get; set; }
     private string ResultsSize { get; set; } = "";
 
-    private readonly List<string> Years = new() { "2027", "2026", "2025" };
     private readonly List<string> States = new()
     {
         "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL",
@@ -275,24 +232,15 @@
     private HashSet<string> StateSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> ModeSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> StatusSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
-    private HashSet<string> YearSelections { get; } = new(StringComparer.OrdinalIgnoreCase);
-    private List<string> AvailableReferenceDates { get; set; } = new();
-    private List<int> AvailableSurveyIds { get; set; } = new();
-    private List<string> AvailableSampleIds { get; set; } = new();
     private DateTime? SelectedReferenceDate { get; set; }
-    private int? SelectedSurveyId { get; set; }
-    private string? SelectedSampleId { get; set; }
-    private string? OptionsMessage { get; set; }
+    private int? ReferenceMonth { get; set; }
+    private int? ReferenceDay { get; set; }
+    private int? ReferenceYear { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (ShowFilters)
             await Js.InvokeVoidAsync("smsPositionFilterPopover", _filtersAnchor, _filtersPop);
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        await RefreshFilterOptionsAsync();
     }
 
     private async Task CloseFilters()
@@ -307,13 +255,7 @@
 
     private void OnSearchSubmit()
     {
-        if (!CanViewDetails)
-        {
-            OptionsMessage = "Select Reference Date, Survey ID, and Sample ID to view details.";
-            return;
-        }
-
-        Navigation.NavigateTo($"/surveys/details{BuildDetailsQuery()}");
+        Navigation.NavigateTo($"/surveys/results{BuildQuery(includeViewAll: false)}");
     }
 
     private async Task ToggleFilters()
@@ -325,118 +267,11 @@
     {
         StartDateFilter = null;
         StopDateFilter = null;
+        ClearReferenceDateFilter();
         StateSelections.Clear();
         ModeSelections.Clear();
         ResultsSize = "";
         StatusSelections.Clear();
-        YearSelections.Clear();
-    }
-
-    private bool CanViewDetails =>
-        SelectedReferenceDate.HasValue &&
-        SelectedSurveyId.HasValue &&
-        !string.IsNullOrWhiteSpace(SelectedSampleId);
-
-    private string SelectedSurveyIdString => SelectedSurveyId?.ToString() ?? "";
-
-    private async Task OnReferenceDateChanged()
-    {
-        await RefreshFilterOptionsAsync();
-    }
-
-    private async Task OnSurveyIdChanged(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out var parsed))
-        {
-            SelectedSurveyId = parsed;
-        }
-        else
-        {
-            SelectedSurveyId = null;
-        }
-
-        await RefreshFilterOptionsAsync();
-    }
-
-    private async Task OnSampleIdChanged(ChangeEventArgs e)
-    {
-        SelectedSampleId = e.Value?.ToString();
-        await RefreshFilterOptionsAsync();
-    }
-
-    private async Task RefreshFilterOptionsAsync()
-    {
-        OptionsMessage = null;
-        var options = await FetchFilterOptionsAsync();
-        if (options is null)
-        {
-            OptionsMessage = "Unable to load selection options. Please try again.";
-            return;
-        }
-
-        AvailableReferenceDates = options.AvailableReferenceDates;
-        AvailableSurveyIds = options.AvailableSurveyIds;
-        AvailableSampleIds = options.AvailableSampleIds;
-
-        var cleared = false;
-        if (SelectedReferenceDate.HasValue &&
-            !AvailableReferenceDates.Contains(SelectedReferenceDate.Value.ToString("yyyy-MM-dd")))
-        {
-            SelectedReferenceDate = null;
-            cleared = true;
-        }
-
-        if (SelectedSurveyId.HasValue &&
-            !AvailableSurveyIds.Contains(SelectedSurveyId.Value))
-        {
-            SelectedSurveyId = null;
-            cleared = true;
-        }
-
-        if (!string.IsNullOrWhiteSpace(SelectedSampleId) &&
-            !AvailableSampleIds.Contains(SelectedSampleId))
-        {
-            SelectedSampleId = null;
-            cleared = true;
-        }
-
-        if (cleared)
-        {
-            options = await FetchFilterOptionsAsync();
-            if (options is not null)
-            {
-                AvailableReferenceDates = options.AvailableReferenceDates;
-                AvailableSurveyIds = options.AvailableSurveyIds;
-                AvailableSampleIds = options.AvailableSampleIds;
-            }
-        }
-
-        if (AvailableReferenceDates.Count == 0 ||
-            AvailableSurveyIds.Count == 0 ||
-            AvailableSampleIds.Count == 0)
-        {
-            OptionsMessage = "No matches found for the current selections.";
-        }
-    }
-
-    private async Task<app_blazor.Services.FilterOptionsResponse?> FetchFilterOptionsAsync()
-    {
-        var client = HttpClientFactory.CreateClient();
-        client.BaseAddress = new Uri(Navigation.BaseUri);
-
-        var query = new List<string>();
-        if (SelectedReferenceDate.HasValue)
-            query.Add($"referenceDate={SelectedReferenceDate.Value:yyyy-MM-dd}");
-        if (SelectedSurveyId.HasValue)
-            query.Add($"surveyId={SelectedSurveyId.Value}");
-        if (!string.IsNullOrWhiteSpace(SelectedSampleId))
-            query.Add($"sampleId={Uri.EscapeDataString(SelectedSampleId)}");
-
-        var url = "api/survey-instances/filter-options";
-        if (query.Count > 0)
-            url += "?" + string.Join("&", query);
-
-        return await client.GetFromJsonAsync<app_blazor.Services.FilterOptionsResponse>(url);
     }
 
     private IEnumerable<FilterChip> AppliedFilterChips => BuildFilterChips();
@@ -446,19 +281,21 @@
     {
         var chips = new List<FilterChip>();
 
-        chips.AddRange(StateSelections.Select(s => new FilterChip(s, () => StateSelections.Remove(s))));
-        chips.AddRange(ModeSelections.Select(m => new FilterChip(m, () => ModeSelections.Remove(m))));
-        chips.AddRange(StatusSelections.Select(s => new FilterChip(s, () => StatusSelections.Remove(s))));
-        chips.AddRange(YearSelections.Select(y => new FilterChip(y, () => YearSelections.Remove(y))));
+        chips.AddRange(StateSelections.Select(s => new FilterChip($"State: {s}", () => StateSelections.Remove(s))));
+        chips.AddRange(ModeSelections.Select(m => new FilterChip($"Mode: {m}", () => ModeSelections.Remove(m))));
+        chips.AddRange(StatusSelections.Select(s => new FilterChip($"Status: {s}", () => StatusSelections.Remove(s))));
 
         if (StartDateFilter.HasValue)
-            chips.Add(new FilterChip(StartDateFilter.Value.ToString("yyyy-MM-dd"), () => StartDateFilter = null));
+            chips.Add(new FilterChip($"Start Date: {StartDateFilter.Value:yyyy-MM-dd}", () => StartDateFilter = null));
 
         if (StopDateFilter.HasValue)
-            chips.Add(new FilterChip(StopDateFilter.Value.ToString("yyyy-MM-dd"), () => StopDateFilter = null));
+            chips.Add(new FilterChip($"End Date: {StopDateFilter.Value:yyyy-MM-dd}", () => StopDateFilter = null));
+
+        if (SelectedReferenceDate.HasValue)
+            chips.Add(new FilterChip($"Reference Date: {SelectedReferenceDate.Value:yyyy-MM-dd}", ClearReferenceDateFilter));
 
         if (!string.IsNullOrWhiteSpace(ResultsSize))
-            chips.Add(new FilterChip($"{ResultsSize} results", () => ResultsSize = ""));
+            chips.Add(new FilterChip($"Results: {ResultsSize}", () => ResultsSize = ""));
 
         return chips;
     }
@@ -477,9 +314,59 @@
         }
     }
 
+    private IEnumerable<int> ReferenceMonthOptions => Enumerable.Range(1, 12);
+
+    private IEnumerable<int> ReferenceDayOptions
+    {
+        get
+        {
+            var year = ReferenceYear ?? DateTime.Today.Year;
+            var month = ReferenceMonth ?? 1;
+            var maxDays = DateTime.DaysInMonth(year, month);
+            return Enumerable.Range(1, maxDays);
+        }
+    }
+
+    private IEnumerable<int> ReferenceYearOptions =>
+        SurveyInstanceService.Instances
+            .Select(s => s.ReferenceDate.Year)
+            .Distinct()
+            .OrderByDescending(y => y);
+
+    private Task OnReferenceDatePartChanged()
+    {
+        if (!ReferenceYear.HasValue || !ReferenceMonth.HasValue || !ReferenceDay.HasValue)
+        {
+            SelectedReferenceDate = null;
+            return Task.CompletedTask;
+        }
+
+        var maxDays = DateTime.DaysInMonth(ReferenceYear.Value, ReferenceMonth.Value);
+        if (ReferenceDay.Value > maxDays)
+        {
+            ReferenceDay = maxDays;
+        }
+
+        SelectedReferenceDate = new DateTime(ReferenceYear.Value, ReferenceMonth.Value, ReferenceDay.Value);
+        return Task.CompletedTask;
+    }
+
+    private void ClearReferenceDateFilter()
+    {
+        SelectedReferenceDate = null;
+        ReferenceMonth = null;
+        ReferenceDay = null;
+        ReferenceYear = null;
+    }
+
     private string BuildQuery(bool includeViewAll)
     {
         var queryParts = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(SearchText))
+        {
+            queryParts.Add($"q={Uri.EscapeDataString(SearchText.Trim())}");
+        }
 
         if (StartDateFilter.HasValue)
         {
@@ -515,10 +402,9 @@
             queryParts.Add($"status={encoded}");
         }
 
-        if (YearSelections.Count > 0)
+        if (SelectedReferenceDate.HasValue)
         {
-            var encoded = string.Join(",", YearSelections.Select(Uri.EscapeDataString));
-            queryParts.Add($"year={encoded}");
+            queryParts.Add($"referenceDate={SelectedReferenceDate.Value:yyyy-MM-dd}");
         }
 
         if (includeViewAll)
@@ -529,28 +415,10 @@
         return queryParts.Count == 0 ? "" : $"?{string.Join("&", queryParts)}";
     }
 
-    private string BuildDetailsQuery()
-    {
-        var parts = new List<string>();
-
-        if (SelectedReferenceDate.HasValue)
-            parts.Add($"referenceDate={SelectedReferenceDate.Value:yyyy-MM-dd}");
-
-        if (SelectedSurveyId.HasValue)
-            parts.Add($"surveyId={SelectedSurveyId.Value}");
-
-        if (!string.IsNullOrWhiteSpace(SelectedSampleId))
-            parts.Add($"sampleId={Uri.EscapeDataString(SelectedSampleId)}");
-
-        return parts.Count == 0 ? "" : $"?{string.Join("&", parts)}";
-    }
+    private const string DemoUserId = "demo-user";
 
     private IReadOnlyList<app_blazor.Services.SurveyInstance> RecentSurveyInstances =>
-        SurveyInstanceService.Instances
-            .OrderByDescending(i => i.ReferenceDate)
-            .ThenByDescending(i => i.SurveyDate)
-            .Take(10)
-            .ToList();
+        RecentSurveyService.GetRecentInstances(DemoUserId, SurveyInstanceService, 10);
 
     private string BuildDetailsHref(app_blazor.Services.SurveyInstance instance)
     {

@@ -8,6 +8,7 @@ builder.Services
     .AddInteractiveServerComponents();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<app_blazor.Services.SurveyInstanceService>();
+builder.Services.AddSingleton<app_blazor.Services.UserRecentSurveyService>();
 
 var app = builder.Build();
 

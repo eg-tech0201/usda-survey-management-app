@@ -1,7 +1,13 @@
 ﻿<header class="top-nav">
     <div class="top-nav-inner">
         <div class="top-nav-left">
-            <a class="navbar-brand" href="">SMS Lite</a>
+            <a class="navbar-brand brand-lockup" href="">
+                <img class="brand-logo" src="/usda%20logo%20white%20transparent.png" alt="USDA logo" />
+                <span class="brand-text">
+                    <span class="brand-title">United States Department of Agriculture</span>
+                    <span class="brand-subtitle">National Agricultural Statistics Service</span>
+                </span>
+            </a>
             <nav class="navigation-scrollable">
                 <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
                     <span class="bi bi-speedometer2" aria-hidden="true"></span> Dashboard
@@ -12,7 +18,10 @@
                     </NavLink>
                     <div class="nav-dropdown" role="menu" aria-label="Calendar submenu">
                         <div class="nav-subgroup">
-                            <a class="nav-subitem" href="calendar/views">Views</a>
+                            <a class="nav-subitem" href="calendar/views">
+                                <span>Views</span>
+                                <span class="nav-arrow" aria-hidden="true">›</span>
+                            </a>
                             <div class="nav-submenu" role="menu">
                                 <a class="nav-subitem" href="calendar/views/month">Month</a>
                                 <a class="nav-subitem" href="calendar/views/week">Week</a>
@@ -20,7 +29,10 @@
                             </div>
                         </div>
                         <div class="nav-subgroup">
-                            <a class="nav-subitem" href="calendar/tasks">Tasks</a>
+                            <a class="nav-subitem" href="calendar/tasks">
+                                <span>Tasks</span>
+                                <span class="nav-arrow" aria-hidden="true">›</span>
+                            </a>
                             <div class="nav-submenu" role="menu">
                                 <a class="nav-subitem" href="calendar/tasks/pending">Pending</a>
                                 <a class="nav-subitem" href="calendar/tasks/overdue">Overdue</a>
@@ -28,7 +40,10 @@
                             </div>
                         </div>
                         <div class="nav-subgroup">
-                            <a class="nav-subitem" href="calendar/settings">Settings</a>
+                            <a class="nav-subitem" href="calendar/settings">
+                                <span>Settings</span>
+                                <span class="nav-arrow" aria-hidden="true">›</span>
+                            </a>
                             <div class="nav-submenu" role="menu">
                                 <a class="nav-subitem" href="calendar/settings/alerts">Alerts</a>
                                 <a class="nav-subitem" href="calendar/settings/integrations">Integrations</a>
@@ -42,7 +57,10 @@
                     </NavLink>
                     <div class="nav-dropdown" role="menu" aria-label="Surveys submenu">
                         <div class="nav-subgroup">
-                            <a class="nav-subitem" href="surveys">Survey Search</a>
+                            <a class="nav-subitem" href="surveys">
+                                <span>Survey Search</span>
+                                <span class="nav-arrow" aria-hidden="true">›</span>
+                            </a>
                             <div class="nav-submenu" role="menu">
                                 <a class="nav-subitem" href="surveys/details">Details</a>
                                 <a class="nav-subitem" href="surveys/details/metadata">Metadata</a>
@@ -50,7 +68,10 @@
                             </div>
                         </div>
                         <div class="nav-subgroup">
-                            <a class="nav-subitem" href="surveys/results">Survey Results</a>
+                            <a class="nav-subitem" href="surveys/results">
+                                <span>Survey Results</span>
+                                <span class="nav-arrow" aria-hidden="true">›</span>
+                            </a>
                             <div class="nav-submenu" role="menu">
                                 <a class="nav-subitem" href="surveys/results/opdom">OpDom Summary</a>
                                 <a class="nav-subitem" href="surveys/results/dcms">DCMS Summary</a>
@@ -58,7 +79,10 @@
                             </div>
                         </div>
                         <div class="nav-subgroup">
-                            <a class="nav-subitem" href="surveys/admin">Survey Admin</a>
+                            <a class="nav-subitem" href="surveys/admin">
+                                <span>Survey Admin</span>
+                                <span class="nav-arrow" aria-hidden="true">›</span>
+                            </a>
                             <div class="nav-submenu" role="menu">
                                 <a class="nav-subitem" href="surveys/admin/modes">Modes</a>
                                 <a class="nav-subitem" href="surveys/admin/assignments">Assignments</a>
@@ -87,10 +111,10 @@
     <div class="notif-dropdown">
         <div class="notif-header">Notifications</div>
         <ul>
-            <li><strong>OMB-2026-014</strong> — Docket approval pending</li>
-            <li><strong>OMB-2026-001</strong> — Docket approved</li>
-            <li><strong>101</strong> — 6 overdue tasks</li>
-            <li><strong>102</strong> — 1 schedule conflict</li>
+            <li><strong>Survey 1004</strong> — 3 responses due this week</li>
+            <li><strong>Survey 1001</strong> — Enumerator update required</li>
+            <li><strong>My Tasks</strong> — 2 items overdue</li>
+            <li><strong>Calendar</strong> — 1 schedule conflict detected</li>
         </ul>
     </div>
 }

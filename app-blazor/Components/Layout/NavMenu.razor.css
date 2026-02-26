@@ -11,7 +11,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 1.25rem;
-    padding: 0.75rem 1.25rem;
+    padding: 0.9rem 1.25rem;
     flex-wrap: wrap;
 }
 
@@ -33,6 +33,36 @@
     font-weight: 800;
     color: #ffffff;
     text-decoration: none;
+}
+
+.brand-lockup {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.brand-logo {
+    height: 56px;
+    width: auto;
+    display: block;
+}
+
+.brand-text {
+    display: inline-flex;
+    flex-direction: column;
+    line-height: 1.1;
+    color: #ffffff;
+}
+
+.brand-title {
+    font-weight: 400;
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+}
+
+.brand-subtitle {
+    font-weight: 800;
+    font-size: 0.82rem;
 }
 
 .navigation-scrollable {
@@ -125,6 +155,17 @@
     white-space: nowrap;
 }
 
+.nav-subitem > span {
+    display: inline-flex;
+    align-items: center;
+}
+
+.nav-arrow {
+    margin-left: auto;
+    font-size: 1rem;
+    color: rgba(11, 43, 75, 0.6);
+}
+
 .nav-subitem:hover {
     background: rgba(31, 111, 63, 0.12);
 }
@@ -144,6 +185,13 @@
     transform: translateX(-6px);
     transition: opacity 150ms ease, transform 150ms ease, visibility 150ms ease;
     z-index: 360;
+}
+
+.nav-subgroup:focus-within .nav-submenu,
+.nav-subgroup:active .nav-submenu {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-6px);
 }
 
 .nav-subgroup:hover .nav-submenu,

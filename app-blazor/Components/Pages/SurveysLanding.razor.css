@@ -154,6 +154,7 @@
     display: grid;
     gap: 0.35rem;
     min-width: 0;
+    position: relative;
 }
 
 .selector-label {
@@ -344,6 +345,10 @@
     margin-top: 0.1rem;
 }
 
+.search-chips-persistent {
+    margin-top: 0.45rem;
+}
+
 .chip {
     display: inline-flex;
     align-items: center;
@@ -356,6 +361,7 @@
     background: #eef1f4;
     border: 1px solid rgba(11, 43, 75, 0.15);
     cursor: pointer;
+    line-height: 1.1;
 }
 
 .chip-x {
@@ -366,8 +372,9 @@
     height: 18px;
     border-radius: 999px;
     background: #d6dbe2;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     line-height: 1;
+    padding-top: 1px;
 }
 
 .filters-row {
@@ -385,6 +392,13 @@
     justify-content: flex-end;
     gap: 0.5rem;
     margin-top: 0.75rem;
+}
+
+.filters-actions .button-lite,
+.filters-actions .button-primary {
+    min-height: 34px;
+    padding: 0.34rem 0.7rem;
+    border-radius: 10px;
 }
 
 .button-lite {

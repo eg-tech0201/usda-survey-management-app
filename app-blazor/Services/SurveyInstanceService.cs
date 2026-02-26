@@ -15,6 +15,14 @@ public sealed class SurveyInstanceService
 
     public IReadOnlyList<SurveyInstance> Instances => _instances;
 
+    public SurveyInstance? FindInstance(DateTime referenceDate, int surveyId, string sampleId)
+    {
+        return _instances.FirstOrDefault(i =>
+            i.ReferenceDate.Date == referenceDate.Date &&
+            i.SurveyId == surveyId &&
+            i.SampleId.Equals(sampleId, StringComparison.OrdinalIgnoreCase));
+    }
+
     public FilterOptionsResponse GetFilterOptions(DateTime? referenceDate, int? surveyId, string? sampleId)
     {
         IEnumerable<SurveyInstance> q = _instances;
@@ -63,6 +71,7 @@ public sealed class SurveyInstanceService
             return null;
 
         var fullRecord = BuildFullRecord(match);
+        var surveyDesignerAssociations = BuildSurveyDesignerAssociations(match);
         return new SurveyInstanceDetailResponse(
             match.SampleId,
             match.SampleName,
@@ -83,6 +92,12 @@ public sealed class SurveyInstanceService
             match.TotalReceived,
             match.TotalDeleted,
             match.BudgetAllocation,
+            match.RespondentInstancesLast1Year,
+            match.RespondentInstancesLast3Years,
+            match.RespondentInstancesLast5Years,
+            match.ResponseHistoryRate,
+            match.ResponseHistoryBreakdown.Select(b => new ResponseHistoryItem(b.Label, b.Count)).ToList(),
+            surveyDesignerAssociations,
             fullRecord
         );
     }
@@ -108,6 +123,76 @@ public sealed class SurveyInstanceService
         }
 
         return q.ToList();
+    }
+
+    public IReadOnlyList<SurveyInstance> GetSurveyInstances(int surveyId)
+        => _instances
+            .Where(i => i.SurveyId == surveyId)
+            .OrderBy(i => i.StateId)
+            .ThenBy(i => i.SampleId)
+            .ToList();
+
+    public IReadOnlyList<SurveyRecordIndexItem> GetSurveyRecordIndex(int surveyId)
+    {
+        return _instances
+            .Where(i => i.SurveyId == surveyId)
+            .Select(i =>
+            {
+                var fullRecord = BuildFullRecord(i);
+                var poid = fullRecord.FirstOrDefault(f => f.Field == "poid")?.Value ?? string.Empty;
+                var targetPoid = fullRecord.FirstOrDefault(f => f.Field == "target_poid")?.Value ?? string.Empty;
+                return new SurveyRecordIndexItem(
+                    i.SurveyId,
+                    i.SampleId,
+                    i.ReferenceDate,
+                    poid,
+                    targetPoid,
+                    i.Mode,
+                    i.StateAlpha);
+            })
+            .OrderBy(i => i.Poid)
+            .ToList();
+    }
+
+    public SurveyRecordLookupResult? FindSurveyRecordByPoid(int surveyId, string poid)
+    {
+        if (string.IsNullOrWhiteSpace(poid))
+            return null;
+
+        var normalizedInput = NormalizePoid(poid);
+        foreach (var instance in _instances.Where(i => i.SurveyId == surveyId))
+        {
+            var fullRecord = BuildFullRecord(instance);
+            var recordPoid = fullRecord.FirstOrDefault(f => f.Field == "poid")?.Value;
+            var targetPoid = fullRecord.FirstOrDefault(f => f.Field == "target_poid")?.Value;
+
+            if (string.IsNullOrWhiteSpace(recordPoid) && string.IsNullOrWhiteSpace(targetPoid))
+                continue;
+
+            if (string.Equals(NormalizePoid(recordPoid), normalizedInput, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(NormalizePoid(targetPoid), normalizedInput, StringComparison.OrdinalIgnoreCase))
+            {
+                return new SurveyRecordLookupResult(
+                    instance.ReferenceDate,
+                    instance.SurveyId,
+                    instance.SampleId,
+                    recordPoid ?? string.Empty,
+                    targetPoid ?? string.Empty);
+            }
+        }
+
+        return null;
+    }
+
+    private static string NormalizePoid(string? poid)
+    {
+        if (string.IsNullOrWhiteSpace(poid))
+            return string.Empty;
+
+        return new string(poid
+            .Where(ch => !char.IsWhiteSpace(ch) && ch != '-')
+            .ToArray())
+            .ToUpperInvariant();
     }
 
     private static List<SurveyInstance> BuildSeedInstances()
@@ -167,7 +252,16 @@ public sealed class SurveyInstanceService
                 },
                 TotalReceived: 1256,
                 TotalDeleted: 24,
-                BudgetAllocation: 320_000m
+                BudgetAllocation: 320_000m,
+                RespondentInstancesLast1Year: 2,
+                RespondentInstancesLast3Years: 4,
+                RespondentInstancesLast5Years: 6,
+                ResponseHistoryRate: 83.3m,
+                ResponseHistoryBreakdown: new List<ResponseHistoryItem>
+                {
+                    new("Completed", 5),
+                    new("Partial", 1)
+                }
             ),
             new SurveyInstance(
                 SurveyId: 1001,
@@ -221,7 +315,16 @@ public sealed class SurveyInstanceService
                 },
                 TotalReceived: 467,
                 TotalDeleted: 6,
-                BudgetAllocation: 110_000m
+                BudgetAllocation: 110_000m,
+                RespondentInstancesLast1Year: 1,
+                RespondentInstancesLast3Years: 3,
+                RespondentInstancesLast5Years: 4,
+                ResponseHistoryRate: 75.0m,
+                ResponseHistoryBreakdown: new List<ResponseHistoryItem>
+                {
+                    new("Completed", 3),
+                    new("Partial", 1)
+                }
             ),
             new SurveyInstance(
                 SurveyId: 1002,
@@ -237,7 +340,7 @@ public sealed class SurveyInstanceService
                 SurveyStopDate: new DateTime(2026, 2, 28),
                 HqSurveyAdmin: "D. Khan",
                 ProjectCode: "ACP-PILOT",
-                Status: "Blocked",
+                Status: "IN HQ REVIEW",
                 OmbNumber: "0535-0456",
                 OmbExpires: new DateTime(2027, 9, 30),
                 State: "AZ",
@@ -275,7 +378,16 @@ public sealed class SurveyInstanceService
                 },
                 TotalReceived: 280,
                 TotalDeleted: 9,
-                BudgetAllocation: 95_000m
+                BudgetAllocation: 95_000m,
+                RespondentInstancesLast1Year: 1,
+                RespondentInstancesLast3Years: 2,
+                RespondentInstancesLast5Years: 3,
+                ResponseHistoryRate: 33.3m,
+                ResponseHistoryBreakdown: new List<ResponseHistoryItem>
+                {
+                    new("Completed", 1),
+                    new("Refused", 2)
+                }
             ),
             new SurveyInstance(
                 SurveyId: 1003,
@@ -328,7 +440,17 @@ public sealed class SurveyInstanceService
                 },
                 TotalReceived: 802,
                 TotalDeleted: 18,
-                BudgetAllocation: 210_000m
+                BudgetAllocation: 210_000m,
+                RespondentInstancesLast1Year: 3,
+                RespondentInstancesLast3Years: 5,
+                RespondentInstancesLast5Years: 7,
+                ResponseHistoryRate: 71.4m,
+                ResponseHistoryBreakdown: new List<ResponseHistoryItem>
+                {
+                    new("Completed", 5),
+                    new("Partial", 1),
+                    new("No response", 1)
+                }
             ),
             new SurveyInstance(
                 SurveyId: 1004,
@@ -381,7 +503,17 @@ public sealed class SurveyInstanceService
                 },
                 TotalReceived: 512,
                 TotalDeleted: 11,
-                BudgetAllocation: 140_000m
+                BudgetAllocation: 140_000m,
+                RespondentInstancesLast1Year: 2,
+                RespondentInstancesLast3Years: 4,
+                RespondentInstancesLast5Years: 5,
+                ResponseHistoryRate: 60.0m,
+                ResponseHistoryBreakdown: new List<ResponseHistoryItem>
+                {
+                    new("Completed", 3),
+                    new("Partial", 1),
+                    new("Refused", 1)
+                }
             )
         };
         ExpandInstances(instances, 100);
@@ -407,7 +539,7 @@ public sealed class SurveyInstanceService
             "Fruit Chemical Use Survey"
         };
 
-        var statuses = new[] { "Not started", "In progress", "Blocked", "Overdue" };
+        var statuses = new[] { "Not started", "In progress", "Blocked", "Overdue", "IN HQ REVIEW" };
         var states = new[] { "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", "PR" };
         var modes = new[] { "CASI", "CAPI", "CATI", "MAIL" };
         var rand = new Random(42);
@@ -429,6 +561,7 @@ public sealed class SurveyInstanceService
             var stateAlpha = states[rand.Next(states.Length)];
             var dcmsCode = new[] { "A1", "B2", "C3" }[rand.Next(0, 3)];
             var opDomStatus = new[] { "Active", "Complete", "Refused" }[rand.Next(0, 3)];
+            var responseHistory = BuildResponseHistory(rand);
 
             instances.Add(new SurveyInstance(
                 SurveyId: surveyId,
@@ -483,9 +616,44 @@ public sealed class SurveyInstanceService
                 },
                 TotalReceived: rand.Next(200, 1500),
                 TotalDeleted: rand.Next(0, 60),
-                BudgetAllocation: rand.Next(80_000, 500_000)
+                BudgetAllocation: rand.Next(80_000, 500_000),
+                RespondentInstancesLast1Year: responseHistory.Last1Year,
+                RespondentInstancesLast3Years: responseHistory.Last3Years,
+                RespondentInstancesLast5Years: responseHistory.Last5Years,
+                ResponseHistoryRate: responseHistory.ResponseRate,
+                ResponseHistoryBreakdown: responseHistory.Breakdown
             ));
         }
+    }
+
+    private static ResponseHistory BuildResponseHistory(Random rand)
+    {
+        var last5 = rand.Next(3, 12);
+        var last3 = Math.Min(last5, rand.Next(1, last5 + 1));
+        var last1 = Math.Min(last3, rand.Next(0, Math.Min(3, last3) + 1));
+
+        var completed = rand.Next(1, last5);
+        var partial = rand.Next(0, last5 - completed + 1);
+        var refused = rand.Next(0, last5 - completed - partial + 1);
+        var noResponse = last5 - completed - partial - refused;
+
+        var breakdown = new List<ResponseHistoryItem>
+        {
+            new("Completed", completed),
+            new("Partial", partial),
+            new("Refused", refused),
+            new("No response", noResponse)
+        }.Where(item => item.Count > 0).ToList();
+
+        var responseRate = Math.Round((decimal)completed / last5 * 100m, 1);
+
+        return new ResponseHistory(
+            Last1Year: last1,
+            Last3Years: last3,
+            Last5Years: last5,
+            ResponseRate: responseRate,
+            Breakdown: breakdown
+        );
     }
 
     private static List<DetailField> BuildFullRecord(SurveyInstance instance)
@@ -603,6 +771,72 @@ public sealed class SurveyInstanceService
         return new Random(seed);
     }
 
+    private static List<SurveyDesignerAssociation> BuildSurveyDesignerAssociations(SurveyInstance instance)
+    {
+        var rand = CreateStableRandom(instance.SurveyId * 17, instance.SampleId, instance.ReferenceDate);
+        var count = rand.Next(1, 4);
+        var associations = new List<SurveyDesignerAssociation>();
+        var modes = instance.Modes.Select(m => m.Mode).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        if (modes.Count == 0)
+        {
+            modes.Add(instance.Mode);
+        }
+
+        for (var i = 0; i < count; i++)
+        {
+            var sKeyNumber = rand.Next(100, 999);
+            var sKey = $"S-{instance.SurveyId}-{sKeyNumber}";
+            var questionnaireId = $"QNR-{instance.SurveyId}-{rand.Next(10, 99)}";
+            var mode = modes[i % modes.Count];
+            var version = $"v{rand.Next(1, 5)}.{rand.Next(0, 10)}";
+            var status = rand.Next(0, 3) switch
+            {
+                0 => "Published",
+                1 => "NASS Review",
+                _ => "Draft"
+            };
+
+            foreach (var format in new[] { "Paper", "Web" })
+            {
+                var artifactId = $"{questionnaireId}-{format.ToUpperInvariant()}";
+                associations.Add(new SurveyDesignerAssociation(
+                    sKey,
+                    artifactId,
+                    mode,
+                    version,
+                    format,
+                    status,
+                    $"https://sms-lite.demo/questionnaires/{artifactId}",
+                    $"https://sms-lite.demo/specifications/{instance.SurveyId}/{sKey}/{format.ToLowerInvariant()}",
+                    $"https://sms-lite.demo/metadata/{instance.SurveyId}/{sKey}",
+                    BuildSpecificationItems(rand, instance.SurveyId)));
+            }
+        }
+
+        return associations
+            .OrderBy(a => a.SKey, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(a => a.QuestionnaireFormat, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static List<QuestionnaireSpecItem> BuildSpecificationItems(Random rand, int surveyId)
+    {
+        var count = rand.Next(2, 5);
+        var items = new List<QuestionnaireSpecItem>();
+        for (var i = 0; i < count; i++)
+        {
+            var code = $"I-{surveyId % 1000:D3}-{rand.Next(10, 99)}";
+            items.Add(new QuestionnaireSpecItem(
+                code,
+                $"Mock item description for {code}"));
+        }
+
+        return items
+            .DistinctBy(i => i.ItemCode)
+            .OrderBy(i => i.ItemCode, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
     private static int StableHash(string input)
     {
         unchecked
@@ -654,7 +888,12 @@ public sealed record SurveyInstance(
     List<CountItem> DcmsCounts,
     int TotalReceived,
     int TotalDeleted,
-    decimal BudgetAllocation
+    decimal BudgetAllocation,
+    int RespondentInstancesLast1Year,
+    int RespondentInstancesLast3Years,
+    int RespondentInstancesLast5Years,
+    decimal ResponseHistoryRate,
+    List<ResponseHistoryItem> ResponseHistoryBreakdown
 );
 
 public sealed record FilterOptionsResponse(
@@ -683,6 +922,12 @@ public sealed record SurveyInstanceDetailResponse(
     int TotalReceived,
     int TotalDeleted,
     decimal BudgetAllocation,
+    int RespondentInstancesLast1Year,
+    int RespondentInstancesLast3Years,
+    int RespondentInstancesLast5Years,
+    decimal ResponseHistoryRate,
+    List<ResponseHistoryItem> ResponseHistoryBreakdown,
+    List<SurveyDesignerAssociation> SurveyDesignerAssociations,
     List<DetailField> FullRecord
 );
 
@@ -690,4 +935,50 @@ public sealed record ModeWindow(string Mode, DateTime StartDate, DateTime StopDa
 
 public sealed record CountItem(string Code, string Definition, int Count);
 
+public sealed record ResponseHistoryItem(string Label, int Count);
+
 public sealed record DetailField(string Field, string Value);
+
+public sealed record SurveyDesignerAssociation(
+    string SKey,
+    string QuestionnaireId,
+    string CollectionMode,
+    string QuestionnaireVersion,
+    string QuestionnaireFormat,
+    string QuestionnaireStatus,
+    string QuestionnaireLink,
+    string SpecificationsLink,
+    string MetadataLink,
+    List<QuestionnaireSpecItem> SpecificationItems
+);
+
+public sealed record QuestionnaireSpecItem(
+    string ItemCode,
+    string Description
+);
+
+public sealed record SurveyRecordIndexItem(
+    int SurveyId,
+    string SampleId,
+    DateTime ReferenceDate,
+    string Poid,
+    string TargetPoid,
+    string Mode,
+    string StateAlpha
+);
+
+public sealed record SurveyRecordLookupResult(
+    DateTime ReferenceDate,
+    int SurveyId,
+    string SampleId,
+    string Poid,
+    string TargetPoid
+);
+
+public sealed record ResponseHistory(
+    int Last1Year,
+    int Last3Years,
+    int Last5Years,
+    decimal ResponseRate,
+    List<ResponseHistoryItem> Breakdown
+);

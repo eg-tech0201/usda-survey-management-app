@@ -103,3 +103,54 @@ window.smsFocusElement = (el) => {
 
   el.focus({ preventScroll: true });
 };
+
+window.smsGetRect = (el) => {
+  if (!el) {
+    return null;
+  }
+
+  const rect = el.getBoundingClientRect();
+  return {
+    top: rect.top,
+    bottom: rect.bottom,
+    left: rect.left,
+    right: rect.right,
+    width: rect.width,
+    height: rect.height,
+    windowWidth: window.innerWidth,
+    windowHeight: window.innerHeight
+  };
+};
+
+window.smsSaveJson = (key, value) => {
+  if (!key) {
+    return;
+  }
+
+  window.localStorage.setItem(key, JSON.stringify(value));
+};
+
+window.smsLoadJson = (key) => {
+  if (!key) {
+    return null;
+  }
+
+  const raw = window.localStorage.getItem(key);
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
+window.smsRemoveStorage = (key) => {
+  if (!key) {
+    return;
+  }
+
+  window.localStorage.removeItem(key);
+};
