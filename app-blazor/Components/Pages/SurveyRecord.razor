@@ -1,0 +1,166 @@
+@page "/surveys/record"
+@page "/surveys/record/{SurveyId:int?}"
+@inject NavigationManager Navigation
+@inject IHttpClientFactory HttpClientFactory
+@inject app_blazor.Services.SurveyInstanceService SurveyInstanceService
+@inject app_blazor.Services.UserRecentSurveyService RecentSurveyService
+
+<PageTitle>Survey Record</PageTitle>
+<h1>Survey Record</h1>
+
+<div class="d-flex justify-content-between mb-3">
+    <a class="btn btn-outline-secondary"
+       href="@BuildBackToDetailsUrl()">Back to Survey Details</a>
+</div>
+
+@if (IsLoading)
+{
+    <div class="alert alert-info">Loading survey record...</div>
+}
+else if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <div class="alert alert-warning">@ErrorMessage</div>
+}
+else if (Detail is null)
+{
+    <div class="alert alert-warning">No record found for the selected survey instance.</div>
+}
+else
+{
+    <div class="card mb-3">
+        <div class="card-header">Record Metadata</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3"><strong>Survey ID:</strong> @Detail.SurveyId</div>
+                <div class="col-md-5"><strong>Title:</strong> @Detail.Title</div>
+                <div class="col-md-4"><strong>Sample ID:</strong> @Detail.SampleId</div>
+                <div class="col-md-3"><strong>Reference Date:</strong> @Detail.ReferenceDate.ToString("yyyy-MM-dd")</div>
+                <div class="col-md-3"><strong>Survey Date:</strong> @Detail.SurveyDate.ToString("yyyy-MM-dd")</div>
+                <div class="col-md-3"><strong>Project Code:</strong> @Detail.ProjectCode</div>
+                <div class="col-md-3"><strong>Version:</strong> @Detail.Version</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">Record Collection Modes</div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-striped align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mode</th>
+                            <th>Start</th>
+                            <th>Stop</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var mode in Detail.Modes.OrderBy(m => m.StartDate))
+                        {
+                            <tr>
+                                <td>@mode.Mode</td>
+                                <td>@mode.StartDate.ToString("yyyy-MM-dd")</td>
+                                <td>@mode.StopDate.ToString("yyyy-MM-dd")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Record Fields (Read Only)</div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-striped align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 34%">Field</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var field in Detail.FullRecord)
+                        {
+                            <tr>
+                                <td>@ToDisplayLabel(field.Field)</td>
+                                <td>@field.Value</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int? SurveyId { get; set; }
+    [SupplyParameterFromQuery(Name = "surveyId")] public int? SurveyIdQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "sampleId")] public string? SampleId { get; set; }
+    [SupplyParameterFromQuery(Name = "referenceDate")] public string? ReferenceDate { get; set; }
+
+    private app_blazor.Services.SurveyInstanceDetailResponse? Detail { get; set; }
+    private string? ErrorMessage { get; set; }
+    private bool IsLoading { get; set; }
+    private const string DemoUserId = "demo-user";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        ErrorMessage = null;
+        Detail = null;
+
+        var surveyId = SurveyIdQuery ?? SurveyId;
+        if (!surveyId.HasValue || string.IsNullOrWhiteSpace(SampleId) || string.IsNullOrWhiteSpace(ReferenceDate))
+        {
+            ErrorMessage = "Missing record keys. Open this page from Survey Details or Survey Results.";
+            return;
+        }
+
+        if (!DateTime.TryParse(ReferenceDate, out var parsedReferenceDate))
+        {
+            ErrorMessage = "Invalid reference date.";
+            return;
+        }
+
+        var instance = SurveyInstanceService.FindInstance(parsedReferenceDate, surveyId.Value, SampleId);
+        if (instance is null || string.IsNullOrWhiteSpace(instance.SampleId) || instance.Status.Equals("IN HQ REVIEW", StringComparison.OrdinalIgnoreCase))
+        {
+            ErrorMessage = "The selected survey instance is not yet available (sample not populated or status is IN HQ REVIEW).";
+            return;
+        }
+
+        IsLoading = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient();
+            client.BaseAddress = new Uri(Navigation.BaseUri);
+
+            var url =
+                $"api/survey-instances/detail?referenceDate={Uri.EscapeDataString(ReferenceDate)}&surveyId={surveyId.Value}&sampleId={Uri.EscapeDataString(SampleId)}";
+            Detail = await client.GetFromJsonAsync<app_blazor.Services.SurveyInstanceDetailResponse>(url);
+            RecentSurveyService.Track(DemoUserId, parsedReferenceDate, surveyId.Value, SampleId!, "Worked");
+        }
+        catch
+        {
+            ErrorMessage = "Unable to load survey record. Please try again.";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private string BuildBackToDetailsUrl()
+    {
+        var surveyId = SurveyIdQuery ?? SurveyId;
+        if (!surveyId.HasValue || string.IsNullOrWhiteSpace(SampleId) || string.IsNullOrWhiteSpace(ReferenceDate))
+            return "/surveys/results";
+
+        return $"/surveys/details?referenceDate={Uri.EscapeDataString(ReferenceDate)}&surveyId={surveyId.Value}&sampleId={Uri.EscapeDataString(SampleId)}";
+    }
+
+    private static string ToDisplayLabel(string field)
+        => field.Replace("_", " ").Replace("-", " ").Trim();
+}

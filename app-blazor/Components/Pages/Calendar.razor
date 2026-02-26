@@ -3,13 +3,6 @@
 
 <h1>Survey Timeline</h1>
 
-<div class="d-flex flex-wrap align-items-center gap-3 mb-3">
-    <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox" id="timelineNotify" checked="@NotificationsEnabled" />
-        <label class="form-check-label" for="timelineNotify">Notifications enabled (stub)</label>
-    </div>
-</div>
-
 <div class="row g-4">
     <div class="col-12 col-lg-7">
         <div class="panel usda-border">
@@ -60,19 +53,7 @@
 </div>
 
 @code {
-    private record TaskRow(int Id, string Task, string Survey, DateTime DueDate, string Status);
     private record MilestoneRow(string Title, DateTime Start, DateTime End);
-
-    private bool NotificationsEnabled { get; set; } = true;
-
-    private readonly List<TaskRow> Tasks = new()
-    {
-        new(1, "Finalize survey iteration dates", "1001 Crop Yield", new DateTime(2026, 1, 26, 17, 0, 0), "In progress"),
-        new(2, "Validate status master (pre-publish)", "1002 Ag Census Pilot", new DateTime(2026, 1, 18, 10, 0, 0), "Blocked"),
-        new(3, "Review questionnaire link (instrument)", "1001 Crop Yield", new DateTime(2026, 1, 22, 14, 30, 0), "Not started"),
-        new(4, "Resolve schedule conflict (overlap)", "1004 Dairy Inventory", new DateTime(2026, 1, 17, 9, 0, 0), "Overdue"),
-        new(5, "Confirm CAWI mode dates", "1003 Farm Labor Study", new DateTime(2026, 1, 11, 16, 0, 0), "In progress"),
-    };
 
     private readonly List<MilestoneRow> Milestones = new()
     {
@@ -83,12 +64,12 @@
     };
 
     private List<TaskCalendar.CalendarEvent> CalendarEvents =>
-        Tasks.Select(t => new TaskCalendar.CalendarEvent
+        Milestones.Select((m, index) => new TaskCalendar.CalendarEvent
         {
-            Id = t.Id,
-            Start = t.DueDate,
-            Title = $"{t.Survey} — {t.Task}",
-            Status = t.Status
+            Id = index + 1,
+            Start = m.Start,
+            Title = $"{m.Title} ({m.Start:yyyy-MM-dd} → {m.End:yyyy-MM-dd})",
+            Status = "Milestone"
         }).ToList();
 
 }

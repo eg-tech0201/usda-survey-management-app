@@ -107,3 +107,47 @@ h1:focus {
         --content-padding-x: 0.75rem;
     }
 }
+.button-lite:hover,
+.button-primary:hover,
+.icon-action:hover,
+.search-filter-button:hover {
+  background: color-mix(in srgb, var(--brand-navy) 7%, transparent);
+}
+
+.typeahead-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow: auto;
+  background: #ffffff;
+  border: 1px solid var(--brand-border);
+  border-radius: 12px;
+  box-shadow: 0 10px 22px rgba(11, 43, 75, 0.12);
+  z-index: 30;
+}
+
+.typeahead-item {
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--brand-navy);
+}
+
+.typeahead-item:hover {
+  background: rgba(31, 111, 63, 0.12);
+}
+table.table-surveys thead th .column-menu-trigger,
+table.table-surveys thead th .column-menu-trigger:hover,
+table.table-surveys thead th .column-menu-trigger:focus {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.column-menu-floating button {
+  border-radius: 999px !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(11, 43, 75, 0.18) !important;
+  box-shadow: none !important;
+}
