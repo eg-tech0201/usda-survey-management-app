@@ -6,7 +6,7 @@
 @inject app_blazor.Services.SurveyInstanceService SurveyInstanceService
 @inject app_blazor.Services.UserRecentSurveyService RecentSurveyService
 
-<h1 class="page-h1">Dashboard</h1>
+<h1 class="page-h1">SMS Lite</h1>
 
 <div class="dashboard-grid" @onclick="ClearSelection">
     <section class="panel surveys-search-panel dashboard-full">
@@ -269,9 +269,9 @@
             }
             else
             {
-                <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                        <thead class="table-light">
+                <div class="table-wrap">
+                    <table class="table-surveys">
+                        <thead>
                             <tr>
                                 <th>Survey ID</th>
                                 <th>Title</th>
@@ -282,7 +282,7 @@
                         <tbody>
                             @foreach (var survey in RecentSurveyInstances)
                             {
-                                <tr>
+                                <tr class="survey-row" @onclick="@(() => Navigation.NavigateTo(BuildDetailsHref(survey)))">
                                     <td>
                                         <a class="table-link" href="@BuildDetailsHref(survey)">@survey.SurveyId</a>
                                     </td>
@@ -290,7 +290,7 @@
                                         <a class="table-link" href="@BuildDetailsHref(survey)">@survey.Title</a>
                                     </td>
                                     <td>@survey.SampleId</td>
-                                    <td>@survey.ReferenceDate.ToString("yyyy-MM-dd")</td>
+                                    <td>@survey.ReferenceDate.ToString("MM-dd-yyyy")</td>
                                 </tr>
                             }
                         </tbody>
@@ -457,13 +457,13 @@
         chips.AddRange(StatusSelections.Select(s => new FilterChip($"Status: {s}", () => StatusSelections.Remove(s))));
 
         if (StartDateFilter.HasValue)
-            chips.Add(new FilterChip($"Start Date: {StartDateFilter.Value:yyyy-MM-dd}", () => StartDateFilter = null));
+            chips.Add(new FilterChip($"Start Date: {StartDateFilter.Value:MM-dd-yyyy}", () => StartDateFilter = null));
 
         if (StopDateFilter.HasValue)
-            chips.Add(new FilterChip($"End Date: {StopDateFilter.Value:yyyy-MM-dd}", () => StopDateFilter = null));
+            chips.Add(new FilterChip($"End Date: {StopDateFilter.Value:MM-dd-yyyy}", () => StopDateFilter = null));
 
         if (SelectedReferenceDate.HasValue)
-            chips.Add(new FilterChip($"Reference Date: {SelectedReferenceDate.Value:yyyy-MM-dd}", ClearReferenceDateFilter));
+            chips.Add(new FilterChip($"Reference Date: {SelectedReferenceDate.Value:MM-dd-yyyy}", ClearReferenceDateFilter));
 
         if (!string.IsNullOrWhiteSpace(ResultsSize))
             chips.Add(new FilterChip($"Results: {ResultsSize}", () => ResultsSize = ""));

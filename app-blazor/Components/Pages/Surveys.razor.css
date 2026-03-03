@@ -4,6 +4,20 @@
     color: var(--brand-navy);
 }
 
+.breadcrumb-mini {
+    font-size: 0.82rem;
+}
+
+.breadcrumb-mini a {
+    color: var(--brand-navy);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.breadcrumb-mini a:hover {
+    text-decoration: underline;
+}
+
 /* toolbar */
 .surveys-toolbar {
     display: flex;
@@ -411,7 +425,8 @@
     background: #d6dbe2;
     font-size: 0.85rem;
     line-height: 1;
-    padding-top: 1px;
+    padding-top: 0;
+    transform: translateY(-1px);
 }
 
 .filters-header {

@@ -5,6 +5,12 @@
 @inject app_blazor.Services.SurveyInstanceService SurveyInstanceService
 
 <h1 class="page-h1">Surveys</h1>
+<nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb breadcrumb-mini mb-0">
+        <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Surveys</li>
+    </ol>
+</nav>
 
 <div class="surveys-toolbar">
     <div class="toolbar-left">
@@ -235,29 +241,10 @@
     <table class="table-surveys">
         <thead>
             <tr>
-                @if (IsColumnVisible("projectCode")) { <th>@ColumnHeader("projectCode", "Project Code")</th> }
-                @if (IsColumnVisible("sampleId")) { <th>@ColumnHeader("sampleId", "Sample ID")</th> }
-                @if (IsColumnVisible("sampleName")) { <th>@ColumnHeader("sampleName", "Sample Name")</th> }
-                @if (IsColumnVisible("surveyId")) { <th>@ColumnHeader("surveyId", "Survey ID")</th> }
-                @if (IsColumnVisible("title")) { <th>@ColumnHeader("title", "Survey Title")</th> }
-                @if (IsColumnVisible("subTitle")) { <th>@ColumnHeader("subTitle", "Survey Subtitle")</th> }
-                @if (IsColumnVisible("surveyDate")) { <th>@ColumnHeader("surveyDate", "Survey Date")</th> }
-                @if (IsColumnVisible("referenceDate")) { <th>@ColumnHeader("referenceDate", "Reference Date")</th> }
-                @if (IsColumnVisible("poid")) { <th>@ColumnHeader("poid", "POID")</th> }
-                @if (IsColumnVisible("targetPoid")) { <th>@ColumnHeader("targetPoid", "Target POID")</th> }
-                @if (IsColumnVisible("status")) { <th>@ColumnHeader("status", "Status")</th> }
-                @if (IsColumnVisible("stateId")) { <th>@ColumnHeader("stateId", "State ID")</th> }
-                @if (IsColumnVisible("state")) { <th>@ColumnHeader("state", "State")</th> }
-                @if (IsColumnVisible("opdom")) { <th>@ColumnHeader("opdom", "OpDom Status")</th> }
-                @if (IsColumnVisible("dcms")) { <th>@ColumnHeader("dcms", "DCMS Code")</th> }
-                @if (IsColumnVisible("enumId")) { <th>@ColumnHeader("enumId", "Enumerator ID")</th> }
-                @if (IsColumnVisible("enumName")) { <th>@ColumnHeader("enumName", "Enumerator")</th> }
-                @if (IsColumnVisible("managerId")) { <th>@ColumnHeader("managerId", "Manager ID")</th> }
-                @if (IsColumnVisible("managerName")) { <th>@ColumnHeader("managerName", "Manager")</th> }
-                @if (IsColumnVisible("coachId")) { <th>@ColumnHeader("coachId", "Coach ID")</th> }
-                @if (IsColumnVisible("coachName")) { <th>@ColumnHeader("coachName", "Coach")</th> }
-                @if (IsColumnVisible("enumNotes")) { <th>@ColumnHeader("enumNotes", "Notes")</th> }
-                @if (IsColumnVisible("responseCode")) { <th>@ColumnHeader("responseCode", "Response Code")</th> }
+                @foreach (var column in VisibleColumns)
+                {
+                    <th>@ColumnHeader(column.Key, column.Label)</th>
+                }
             </tr>
         </thead>
 
@@ -265,44 +252,51 @@
             @foreach (var s in PagedRows)
             {
                 <tr class="survey-row" @onclick="() => NavigateToDetails(s)">
-                    @if (IsColumnVisible("projectCode")) { <td class="td-title">@s.ProjectCode</td> }
-                    @if (IsColumnVisible("sampleId")) { <td class="td-title">@s.SampleId</td> }
-                    @if (IsColumnVisible("sampleName")) { <td class="td-title">@s.SampleName</td> }
-                    @if (IsColumnVisible("surveyId"))
+                    @foreach (var column in VisibleColumns)
                     {
-                        <td class="td-id">
-                            <a class="survey-link" href="@BuildDetailsHref(s)">@s.Id</a>
-                        </td>
+                        if (column.Key.Equals("survey_id", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <td class="td-id">
+                                <a class="survey-link" href="@BuildDetailsHref(s)" @onclick:preventDefault="true" @onclick="() => NavigateToDetails(s)">@GetColumnValue(s, column.Key)</a>
+                            </td>
+                        }
+                        else if (column.Key.Equals("survey_title", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <td class="td-title">
+                                <a class="survey-link" href="@BuildDetailsHref(s)" @onclick:preventDefault="true" @onclick="() => NavigateToDetails(s)">@GetColumnValue(s, column.Key)</a>
+                            </td>
+                        }
+                        else
+                        {
+                            <td>@GetColumnValue(s, column.Key)</td>
+                        }
                     }
-                    @if (IsColumnVisible("title"))
-                    {
-                        <td class="td-title">
-                            <a class="survey-link" href="@BuildDetailsHref(s)">@s.Title</a>
-                        </td>
-                    }
-                    @if (IsColumnVisible("subTitle")) { <td class="td-title">@s.SubTitle</td> }
-                    @if (IsColumnVisible("surveyDate")) { <td>@s.SurveyDate.ToString("yyyy-MM-dd")</td> }
-                    @if (IsColumnVisible("referenceDate")) { <td>@s.ReferenceDate.ToString("yyyy-MM-dd")</td> }
-                    @if (IsColumnVisible("poid")) { <td>@s.Poid</td> }
-                    @if (IsColumnVisible("targetPoid")) { <td>@s.TargetPoid</td> }
-                    @if (IsColumnVisible("status")) { <td>@s.Status</td> }
-                    @if (IsColumnVisible("stateId")) { <td>@s.StateId</td> }
-                    @if (IsColumnVisible("state")) { <td>@s.StateAlpha</td> }
-                    @if (IsColumnVisible("opdom")) { <td>@s.OpDomStatusId</td> }
-                    @if (IsColumnVisible("dcms")) { <td>@s.DcmsCodeId</td> }
-                    @if (IsColumnVisible("enumId")) { <td>@s.EnumeratorId</td> }
-                    @if (IsColumnVisible("enumName")) { <td>@s.EnumeratorName</td> }
-                    @if (IsColumnVisible("managerId")) { <td>@s.ManagerId</td> }
-                    @if (IsColumnVisible("managerName")) { <td>@s.ManagerName</td> }
-                    @if (IsColumnVisible("coachId")) { <td>@s.CoachId</td> }
-                    @if (IsColumnVisible("coachName")) { <td>@s.CoachName</td> }
-                    @if (IsColumnVisible("enumNotes")) { <td>@s.EnumeratorNotes</td> }
-                    @if (IsColumnVisible("responseCode")) { <td>@s.ResponseCode</td> }
                 </tr>
             }
         </tbody>
     </table>
 </div>
+
+@if (ShowUnavailableAlert)
+{
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Survey Not Available</h5>
+                    <button type="button" class="btn-close" aria-label="Close" @onclick="CloseUnavailableAlert"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">@UnavailableAlertMessage</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" @onclick="CloseUnavailableAlert">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     [SupplyParameterFromQuery(Name = "q")] public string? Query { get; set; }
@@ -317,39 +311,41 @@
 
     // ---- DEMO model (you already have this) ----
     private record SurveyRow(
-    int Id,
-    string SampleId,
-    string Poid,
-    string TargetPoid,
-    DateTime ReferenceDate,
-    DateTime SurveyDate,
-    string Title,
-    string OmbNumber,
-    DateTime OmbExpires,
-    string SampleName,
-    DateTime StartDate,
-    DateTime StopDate,
-    string Status,
-    string State,
-    string Region,
-    string Mode,
-    string ProjectCode,
-    string SubTitle,
-    string StateId,
-    string StateAlpha,
-    string DcmsCodeId,
-    string OpDomStatusId,
-    string EnumeratorId,
-    string EnumeratorName,
-    string ManagerId,
-    string ManagerName,
-    string CoachId,
-    string CoachName,
-    string ResponseCode,
-    string EnumeratorNotes
+        int Id,
+        string SampleId,
+        string Poid,
+        string TargetPoid,
+        DateTime ReferenceDate,
+        DateTime SurveyDate,
+        string Title,
+        string OmbNumber,
+        DateTime OmbExpires,
+        string SampleName,
+        DateTime StartDate,
+        DateTime StopDate,
+        string Status,
+        string State,
+        string Region,
+        string Mode,
+        string ProjectCode,
+        string SubTitle,
+        string StateId,
+        string StateAlpha,
+        string DcmsCodeId,
+        string OpDomStatusId,
+        string EnumeratorId,
+        string EnumeratorName,
+        string ManagerId,
+        string ManagerName,
+        string CoachId,
+        string CoachName,
+        string ResponseCode,
+        string EnumeratorNotes,
+        Dictionary<string, string> Metadata
     );
 
     private List<SurveyRow> SurveyRows = new();
+    private IEnumerable<ColumnOption> VisibleColumns => Columns.Where(c => c.Visible);
 
     // ---- toolbar state ----
     private string SearchText { get; set; } = "";
@@ -390,6 +386,8 @@
     private bool SortAscending { get; set; } = true;
     private const string ColumnPreferenceStorageKey = "sms.surveys.columns.v1";
     private string? DraggedColumnKey { get; set; }
+    private bool ShowUnavailableAlert { get; set; }
+    private string UnavailableAlertMessage { get; set; } = "The selected survey instance is not yet available.";
 
     // ---- paging ----
     private int PageIndex { get; set; } = 0;
@@ -403,15 +401,18 @@
             .Select(i => i.SurveyId)
             .Distinct()
             .SelectMany(id => SurveyInstanceService.GetSurveyRecordIndex(id))
+            .GroupBy(r => BuildRecordKey(r.SurveyId, r.SampleId, r.ReferenceDate), StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
-                r => BuildRecordKey(r.SurveyId, r.SampleId, r.ReferenceDate),
-                r => r,
+                g => g.Key,
+                g => g.First(),
                 StringComparer.OrdinalIgnoreCase);
 
         SurveyRows = SurveyInstanceService.Instances
             .Select(i =>
             {
                 recordIndexByKey.TryGetValue(BuildRecordKey(i.SurveyId, i.SampleId, i.ReferenceDate), out var recordIndex);
+                var detail = SurveyInstanceService.GetDetail(i.ReferenceDate, i.SurveyId, i.SampleId);
+                var metadata = BuildMetadata(i, recordIndex, detail?.FullRecord ?? new List<app_blazor.Services.DetailField>());
                 return new SurveyRow(
                     i.SurveyId,
                     i.SampleId,
@@ -442,7 +443,8 @@
                     i.CoachId,
                     i.CoachName,
                     i.ResponseCode,
-                    i.EnumeratorNotes);
+                    i.EnumeratorNotes,
+                    metadata);
             })
             .ToList();
         PageSizeString = PageSize == 0 ? "All" : PageSize.ToString(); // will be "10"
@@ -629,7 +631,19 @@
 
     private void NavigateToDetails(SurveyRow row)
     {
+        if (row.Status.Equals("IN HQ REVIEW", StringComparison.OrdinalIgnoreCase))
+        {
+            UnavailableAlertMessage = "This survey is currently IN HQ REVIEW and not yet available.";
+            ShowUnavailableAlert = true;
+            return;
+        }
+
         Navigation.NavigateTo(BuildDetailsHref(row));
+    }
+
+    private void CloseUnavailableAlert()
+    {
+        ShowUnavailableAlert = false;
     }
 
     private IEnumerable<SurveyRow> ApplySurveyFilters()
@@ -719,13 +733,13 @@
         chips.AddRange(StatusSelections.Select(s => new FilterChip($"Status: {s}", () => StatusSelections.Remove(s))));
 
         if (SelectedReferenceDate.HasValue)
-            chips.Add(new FilterChip($"Reference Date: {SelectedReferenceDate.Value:yyyy-MM-dd}", ClearReferenceDateFilter));
+            chips.Add(new FilterChip($"Reference Date: {SelectedReferenceDate.Value:MM-dd-yyyy}", ClearReferenceDateFilter));
 
         if (StartDateFilter.HasValue)
-            chips.Add(new FilterChip($"Start Date: {StartDateFilter.Value:yyyy-MM-dd}", () => StartDateFilter = null));
+            chips.Add(new FilterChip($"Start Date: {StartDateFilter.Value:MM-dd-yyyy}", () => StartDateFilter = null));
 
         if (StopDateFilter.HasValue)
-            chips.Add(new FilterChip($"End Date: {StopDateFilter.Value:yyyy-MM-dd}", () => StopDateFilter = null));
+            chips.Add(new FilterChip($"End Date: {StopDateFilter.Value:MM-dd-yyyy}", () => StopDateFilter = null));
 
         if (PageSizeTouched)
             chips.Add(new FilterChip($"Results: {PageSizeString}", () =>
@@ -814,6 +828,73 @@
 
     private static string BuildRecordKey(int surveyId, string sampleId, DateTime referenceDate)
         => $"{surveyId}|{sampleId}|{referenceDate:yyyy-MM-dd}";
+
+    private static Dictionary<string, string> BuildMetadata(
+        app_blazor.Services.SurveyInstance instance,
+        app_blazor.Services.SurveyRecordIndexItem? recordIndex,
+        List<app_blazor.Services.DetailField> fullRecord)
+    {
+        var metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var field in fullRecord)
+        {
+            metadata[NormalizeFieldKey(field.Field)] = field.Value ?? "";
+        }
+
+        metadata["project_code"] = instance.ProjectCode;
+        metadata["sample_id"] = instance.SampleId;
+        metadata["sample_name"] = instance.SampleName;
+        metadata["survey_id"] = instance.SurveyId.ToString();
+        metadata["survey_title"] = instance.Title;
+        metadata["survey_subtitle"] = instance.SubTitle;
+        metadata["survey_date"] = instance.SurveyDate.ToString("MM-dd-yyyy");
+        metadata["start_date"] = instance.SurveyStartDate.ToString("MM-dd-yyyy");
+        metadata["stop_date"] = instance.SurveyStopDate.ToString("MM-dd-yyyy");
+        metadata["reference_date"] = instance.ReferenceDate.ToString("MM-dd-yyyy");
+        metadata["state_id"] = instance.StateId;
+        metadata["state_alpha"] = instance.StateAlpha;
+        metadata["state_abbrev"] = instance.StateAlpha;
+        metadata["dcms_code_id"] = instance.DcmsCodeId;
+        metadata["op_dom_status_id"] = instance.OpDomStatusId;
+        metadata["enumerator_id"] = instance.EnumeratorId;
+        metadata["enumerator_name"] = instance.EnumeratorName;
+        metadata["manager_id"] = instance.ManagerId;
+        metadata["manager_name"] = instance.ManagerName;
+        metadata["coach_id"] = instance.CoachId;
+        metadata["coach_name"] = instance.CoachName;
+        metadata["enum_notes"] = instance.EnumeratorNotes;
+        metadata["response_code"] = instance.ResponseCode;
+        metadata["status"] = GetGridStatus(instance);
+        metadata["poid"] = recordIndex?.Poid ?? metadata.GetValueOrDefault("poid", "");
+        metadata["target_poid"] = recordIndex?.TargetPoid ?? metadata.GetValueOrDefault("target_poid", "");
+        metadata["latitude"] = metadata.GetValueOrDefault("latitude", "");
+        metadata["longitude"] = metadata.GetValueOrDefault("longitude", "");
+
+        return metadata;
+    }
+
+    private static string NormalizeFieldKey(string field)
+    {
+        var lowered = field.Trim().ToLowerInvariant();
+        var sb = new StringBuilder(lowered.Length);
+        var priorUnderscore = false;
+
+        foreach (var ch in lowered)
+        {
+            if (char.IsLetterOrDigit(ch))
+            {
+                sb.Append(ch);
+                priorUnderscore = false;
+            }
+            else if (!priorUnderscore)
+            {
+                sb.Append('_');
+                priorUnderscore = true;
+            }
+        }
+
+        var normalized = sb.ToString().Trim('_');
+        return normalized.Replace("__", "_");
+    }
 
     private static string GetGridStatus(app_blazor.Services.SurveyInstance instance)
     {
@@ -1238,76 +1319,98 @@
 
     private string GetColumnValue(SurveyRow row, string key) => key switch
     {
-        "projectCode" => row.ProjectCode,
-        "sampleId" => row.SampleId,
-        "sampleName" => row.SampleName,
-        "surveyId" => row.Id.ToString(),
-        "title" => row.Title,
-        "subTitle" => row.SubTitle,
-        "surveyDate" => row.SurveyDate.ToString("yyyy-MM-dd"),
-        "referenceDate" => row.ReferenceDate.ToString("yyyy-MM-dd"),
+        "project_code" => row.ProjectCode,
+        "sample_id" => row.SampleId,
+        "sample_name" => row.SampleName,
+        "survey_id" => row.Id.ToString(),
+        "survey_title" => row.Title,
+        "survey_subtitle" => row.SubTitle,
+        "survey_date" => row.SurveyDate.ToString("MM-dd-yyyy"),
+        "start_date" => row.StartDate.ToString("MM-dd-yyyy"),
+        "stop_date" => row.StopDate.ToString("MM-dd-yyyy"),
+        "reference_date" => row.ReferenceDate.ToString("MM-dd-yyyy"),
         "poid" => row.Poid,
-        "targetPoid" => row.TargetPoid,
+        "target_poid" => row.TargetPoid,
         "status" => row.Status,
-        "stateId" => row.StateId,
-        "state" => row.StateAlpha,
-        "opdom" => row.OpDomStatusId,
-        "dcms" => row.DcmsCodeId,
-        "enumId" => row.EnumeratorId,
-        "enumName" => row.EnumeratorName,
-        "managerId" => row.ManagerId,
-        "managerName" => row.ManagerName,
-        "coachId" => row.CoachId,
-        "coachName" => row.CoachName,
-        "enumNotes" => row.EnumeratorNotes,
-        "responseCode" => row.ResponseCode,
+        "state_id" => row.StateId,
+        "state_alpha" => row.StateAlpha,
+        "op_dom_status_id" => row.OpDomStatusId,
+        "dcms_code_id" => row.DcmsCodeId,
+        "enumerator_id" => row.EnumeratorId,
+        "enumerator_name" => row.EnumeratorName,
+        "manager_id" => row.ManagerId,
+        "manager_name" => row.ManagerName,
+        "coach_id" => row.CoachId,
+        "coach_name" => row.CoachName,
+        "enum_notes" => row.EnumeratorNotes,
+        "response_code" => row.ResponseCode,
         _ => ""
+    } switch
+    {
+        "" when row.Metadata.TryGetValue(key, out var value) => value,
+        var direct => direct
     };
 
     private IComparable GetSortValue(SurveyRow row, string key) => key switch
     {
-        "surveyId" => row.Id,
-        "surveyDate" => row.SurveyDate,
-        "stateId" => int.TryParse(row.StateId, out var stateId) ? stateId : int.MaxValue,
-        "projectCode" => ToAlphaNumericSortKey(row.ProjectCode),
-        "sampleId" => ToAlphaNumericSortKey(row.SampleId),
-        "sampleName" => ToAlphaNumericSortKey(row.SampleName),
-        "title" => ToAlphaNumericSortKey(row.Title),
-        "subTitle" => ToAlphaNumericSortKey(row.SubTitle),
+        "survey_id" => row.Id,
+        "survey_date" => row.SurveyDate,
+        "start_date" => row.StartDate,
+        "stop_date" => row.StopDate,
+        "reference_date" => row.ReferenceDate,
+        "state_id" => int.TryParse(row.StateId, out var stateId) ? stateId : int.MaxValue,
+        "project_code" => ToAlphaNumericSortKey(row.ProjectCode),
+        "sample_id" => ToAlphaNumericSortKey(row.SampleId),
+        "sample_name" => ToAlphaNumericSortKey(row.SampleName),
+        "survey_title" => ToAlphaNumericSortKey(row.Title),
+        "survey_subtitle" => ToAlphaNumericSortKey(row.SubTitle),
         "poid" => ToAlphaNumericSortKey(row.Poid),
-        "targetPoid" => ToAlphaNumericSortKey(row.TargetPoid),
+        "target_poid" => ToAlphaNumericSortKey(row.TargetPoid),
         "status" => GetStatusSortRank(row.Status),
-        "referenceDate" => row.ReferenceDate,
-        "state" => ToAlphaNumericSortKey(row.StateAlpha),
-        "opdom" => ToAlphaNumericSortKey(row.OpDomStatusId),
-        "dcms" => ToAlphaNumericSortKey(row.DcmsCodeId),
-        "enumId" => ToAlphaNumericSortKey(row.EnumeratorId),
-        "enumName" => ToAlphaNumericSortKey(row.EnumeratorName),
-        "managerId" => ToAlphaNumericSortKey(row.ManagerId),
-        "managerName" => ToAlphaNumericSortKey(row.ManagerName),
-        "coachId" => ToAlphaNumericSortKey(row.CoachId),
-        "coachName" => ToAlphaNumericSortKey(row.CoachName),
-        "enumNotes" => ToAlphaNumericSortKey(row.EnumeratorNotes),
-        "responseCode" => GetResponseCodeRank(row.ResponseCode),
-        _ => row.Id
+        "state_alpha" => ToAlphaNumericSortKey(row.StateAlpha),
+        "op_dom_status_id" => ToAlphaNumericSortKey(row.OpDomStatusId),
+        "dcms_code_id" => ToAlphaNumericSortKey(row.DcmsCodeId),
+        "enumerator_id" => ToAlphaNumericSortKey(row.EnumeratorId),
+        "enumerator_name" => ToAlphaNumericSortKey(row.EnumeratorName),
+        "manager_id" => ToAlphaNumericSortKey(row.ManagerId),
+        "manager_name" => ToAlphaNumericSortKey(row.ManagerName),
+        "coach_id" => ToAlphaNumericSortKey(row.CoachId),
+        "coach_name" => ToAlphaNumericSortKey(row.CoachName),
+        "enum_notes" => ToAlphaNumericSortKey(row.EnumeratorNotes),
+        "response_code" => GetResponseCodeRank(row.ResponseCode),
+        _ => ToComparableFallback(GetColumnValue(row, key))
     };
 
-    private static (string Asc, string Desc) GetSortLabels(string key) => key switch
+    private static (string Asc, string Desc) GetSortLabels(string key)
     {
-        "surveyId" => ("Lowest → Highest", "Highest → Lowest"),
-        "stateId" => ("Lowest → Highest", "Highest → Lowest"),
-        "sampleId" => ("Lowest → Highest", "Highest → Lowest"),
-        "poid" => ("Lowest → Highest", "Highest → Lowest"),
-        "targetPoid" => ("Lowest → Highest", "Highest → Lowest"),
-        "enumId" => ("Lowest → Highest", "Highest → Lowest"),
-        "managerId" => ("Lowest → Highest", "Highest → Lowest"),
-        "coachId" => ("Lowest → Highest", "Highest → Lowest"),
-        "surveyDate" => ("Oldest → Newest", "Newest → Oldest"),
-        "referenceDate" => ("Oldest → Newest", "Newest → Oldest"),
-        "status" => ("Designer key order", "Reverse designer key"),
-        "responseCode" => ("Status order", "Reverse status"),
-        _ => ("Ascending (A → Z)", "Descending (Z → A)")
-    };
+        if (key.Equals("status", StringComparison.OrdinalIgnoreCase))
+            return ("Designer key order", "Reverse designer key");
+        if (key.Equals("response_code", StringComparison.OrdinalIgnoreCase))
+            return ("Status order", "Reverse status");
+        if (key.EndsWith("_date", StringComparison.OrdinalIgnoreCase) || key.Equals("respdate", StringComparison.OrdinalIgnoreCase))
+            return ("Oldest → Newest", "Newest → Oldest");
+        if (key.EndsWith("_id", StringComparison.OrdinalIgnoreCase) ||
+            key.Equals("survey_id", StringComparison.OrdinalIgnoreCase) ||
+            key.Equals("sample_id", StringComparison.OrdinalIgnoreCase) ||
+            key.Equals("poid", StringComparison.OrdinalIgnoreCase) ||
+            key.Equals("target_poid", StringComparison.OrdinalIgnoreCase) ||
+            key.Equals("mseqnum", StringComparison.OrdinalIgnoreCase) ||
+            key.Equals("samp_no", StringComparison.OrdinalIgnoreCase))
+        {
+            return ("Lowest → Highest", "Highest → Lowest");
+        }
+
+        return ("Ascending (A → Z)", "Descending (Z → A)");
+    }
+
+    private static IComparable ToComparableFallback(string value)
+    {
+        if (DateTime.TryParse(value, out var date))
+            return date;
+        if (int.TryParse(value, out var number))
+            return number;
+        return ToAlphaNumericSortKey(value);
+    }
 
     private static string ToAlphaNumericSortKey(string? value)
     {
@@ -1365,29 +1468,87 @@
 
     private static List<ColumnOption> BuildDefaultColumns() => new()
     {
-        new ColumnOption("projectCode", "Project Code", true),
-        new ColumnOption("sampleId", "Sample ID", true),
-        new ColumnOption("sampleName", "Sample Name", true),
-        new ColumnOption("surveyId", "Survey ID", true),
-        new ColumnOption("title", "Survey Title", true),
-        new ColumnOption("subTitle", "Survey Subtitle", true),
-        new ColumnOption("surveyDate", "Survey Date", false),
-        new ColumnOption("referenceDate", "Reference Date", true),
-        new ColumnOption("poid", "POID", true),
-        new ColumnOption("targetPoid", "Target POID", true),
-        new ColumnOption("status", "Status", true),
-        new ColumnOption("stateId", "State ID", false),
-        new ColumnOption("state", "State", false),
-        new ColumnOption("opdom", "OpDom Status", false),
-        new ColumnOption("dcms", "DCMS Code", false),
-        new ColumnOption("enumId", "Enumerator ID", false),
-        new ColumnOption("enumName", "Enumerator", false),
-        new ColumnOption("managerId", "Manager ID", false),
-        new ColumnOption("managerName", "Manager", false),
-        new ColumnOption("coachId", "Coach ID", false),
-        new ColumnOption("coachName", "Coach", false),
-        new ColumnOption("enumNotes", "Notes", true),
-        new ColumnOption("responseCode", "Response Code", false)
+        new ColumnOption("project_code", "Project Code", false),
+        new ColumnOption("sample_id", "Sample ID", false),
+        new ColumnOption("sample_name", "Sample Name", true),
+        new ColumnOption("survey_id", "Survey ID", true),
+        new ColumnOption("survey_title", "Survey Title", true),
+        new ColumnOption("survey_subtitle", "Survey Subtitle", false),
+        new ColumnOption("survey_date", "Reference Date", true),
+        new ColumnOption("start_date", "Start Date", true),
+        new ColumnOption("stop_date", "Stop Date", true),
+        new ColumnOption("state_id", "State ID", false),
+        new ColumnOption("stratum", "Stratum", false),
+        new ColumnOption("target_poid", "Target POID", false),
+        new ColumnOption("tract", "Tract", false),
+        new ColumnOption("subtract", "Subtract", false),
+        new ColumnOption("poid", "POID", false),
+        new ColumnOption("dcms_code_id", "DCMS Code ID", false),
+        new ColumnOption("oper_name", "Oper Name", false),
+        new ColumnOption("whole_name", "Whole Name", false),
+        new ColumnOption("addr_delivery", "Addr Delivery", false),
+        new ColumnOption("addr_other", "Addr Other", false),
+        new ColumnOption("place_name", "Place Name", false),
+        new ColumnOption("state_alpha", "State Alpha", false),
+        new ColumnOption("zip5", "ZIP5", false),
+        new ColumnOption("zip4", "ZIP4", false),
+        new ColumnOption("op_addr_delivery", "Op Addr Delivery", false),
+        new ColumnOption("op_address_other", "Op Address Other", false),
+        new ColumnOption("op_placename", "Op Placename", false),
+        new ColumnOption("op_state_alpha", "Op State Alpha", false),
+        new ColumnOption("op_zip5", "Op ZIP5", false),
+        new ColumnOption("op_zip4", "Op ZIP4", false),
+        new ColumnOption("phone_char", "Phone", false),
+        new ColumnOption("enumerator_id", "Enumerator ID", false),
+        new ColumnOption("enumerator_name", "Enumerator Name", false),
+        new ColumnOption("manager_id", "Manager ID", false),
+        new ColumnOption("manager_name", "Manager Name", false),
+        new ColumnOption("coach_id", "Coach ID", false),
+        new ColumnOption("coach_name", "Coach Name", false),
+        new ColumnOption("respdate", "Resp Date", false),
+        new ColumnOption("pmc_mail_flag", "PMC Mail Flag", false),
+        new ColumnOption("rfo_mail_flag", "RFO Mail Flag", false),
+        new ColumnOption("casi_flag", "CASI Flag", false),
+        new ColumnOption("capi_flag", "CAPI Flag", false),
+        new ColumnOption("cati_flag", "CATI Flag", false),
+        new ColumnOption("mail_start_date", "Mail Start Date", false),
+        new ColumnOption("mail_stop_date", "Mail Stop Date", false),
+        new ColumnOption("casi_start_date", "CASI Start Date", false),
+        new ColumnOption("casi_stop_date", "CASI Stop Date", false),
+        new ColumnOption("capi_start_date", "CAPI Start Date", false),
+        new ColumnOption("capi_stop_date", "CAPI Stop Date", false),
+        new ColumnOption("cati_start_date", "CATI Start Date", false),
+        new ColumnOption("cati_stop_date", "CATI Stop Date", false),
+        new ColumnOption("op_county_id", "Op County ID", false),
+        new ColumnOption("opcounty_name", "Op County Name", false),
+        new ColumnOption("op_dom_status_id", "Op Dom Status ID", false),
+        new ColumnOption("mseqnum", "Mseqnum", false),
+        new ColumnOption("e_mail", "E-mail", false),
+        new ColumnOption("opmail", "Op Mail", false),
+        new ColumnOption("office_notes", "Office Notes", false),
+        new ColumnOption("enum_notes", "Enum Notes", true),
+        new ColumnOption("samp_no", "Samp No", false),
+        new ColumnOption("epa_id", "EPA ID", false),
+        new ColumnOption("label1", "Label1", false),
+        new ColumnOption("label2", "Label2", false),
+        new ColumnOption("label3", "Label3", false),
+        new ColumnOption("label4", "Label4", false),
+        new ColumnOption("label5", "Label5", false),
+        new ColumnOption("other_field", "Other Field", false),
+        new ColumnOption("latitude", "Latitude", false),
+        new ColumnOption("longitude", "Longitude", false),
+        new ColumnOption("frame_id", "Frame ID", false),
+        new ColumnOption("segment_id", "Segment ID", false),
+        new ColumnOption("af_tract", "AF Tract", false),
+        new ColumnOption("response_code", "Response Code", false),
+        new ColumnOption("state_abbrev", "State Abbrev", false),
+        new ColumnOption("survey_code_for_web_access", "Survey Code (Web)", false),
+        new ColumnOption("tier", "Tier", false),
+        new ColumnOption("xstatelink_casi", "XstateLink (CASI)", false),
+        new ColumnOption("coordination_id_capi", "Coordination ID (CAPI)", false),
+        new ColumnOption("census_variables", "Census Variables", false),
+        new ColumnOption("status", "Status", false),
+        new ColumnOption("label1_5", "Label1-5", false)
     };
 
     private sealed class ColumnOption

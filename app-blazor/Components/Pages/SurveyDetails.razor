@@ -5,8 +5,15 @@
 @inject app_blazor.Services.SurveyInstanceService SurveyInstanceService
 @inject app_blazor.Services.UserRecentSurveyService RecentSurveyService
 
-<PageTitle>Survey Details</PageTitle>
-<h1>Survey Details</h1>
+<PageTitle>@(Detail?.Title ?? "Survey Details")</PageTitle>
+<nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb breadcrumb-mini mb-0">
+        <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/surveys">Surveys</a></li>
+        <li class="breadcrumb-item"><a href="/surveys/results">Results</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Survey Details</li>
+    </ol>
+</nav>
 
 @if (IsLoading)
 {
@@ -22,228 +29,125 @@ else if (Detail is null)
 }
 else
 {
-    <div class="details-top-grid mb-3">
-        <div class="card">
-            <div class="card-header">Survey Overview</div>
+    <section class="detail-identity mb-2">
+        <div class="detail-identity-main">
+            <h1 class="detail-identity-title">@Detail.Title</h1>
+            <div class="detail-identity-subtitle">@Detail.SubTitle</div>
+        </div>
+        <div class="detail-identity-meta">
+            <div class="identity-line">
+                <span class="identity-key">Survey ID:</span>
+                <span class="identity-data">@Detail.SurveyId</span>
+            </div>
+            <div class="identity-line">
+                <span class="identity-key">Reference Date:</span>
+                <span class="identity-data">@Detail.ReferenceDate.ToString("MM-dd-yyyy")</span>
+            </div>
+        </div>
+    </section>
+
+    <div class="details-top-layout mb-2">
+        <div class="card overview-card">
             <div class="card-body top-card-body">
-                <div class="survey-overview-grid">
+                <div class="count-stack-wrap overview-stack-wrap">
+                    <div class="metric-label">Received vs Deleted</div>
+                    <div class="count-stack">
+                        <span class="count-stack-received" style="width:@($"{ReceivedPercent:0.##}%")"></span>
+                        <span class="count-stack-deleted" style="width:@($"{DeletedPercent:0.##}%")"></span>
+                    </div>
+                    <div class="count-stack-meta">
+                        <span class="count-stack-received-text">Received: @Detail.TotalReceived (@ReceivedPercent.ToString("0.0")%)</span>
+                        <span class="count-stack-deleted-text">Deleted: @Detail.TotalDeleted (@DeletedPercent.ToString("0.0")%)</span>
+                    </div>
+                </div>
+                <div class="survey-overview-grid compact-overview">
                     <div class="survey-overview-item"><span class="overview-label">Sample ID</span><span class="overview-value">@Detail.SampleId</span></div>
-                    <div class="survey-overview-item"><span class="overview-label">Survey ID</span><span class="overview-value">@Detail.SurveyId</span></div>
-                    <div class="survey-overview-item survey-overview-item-wide"><span class="overview-label">Sample Name</span><span class="overview-value">@Detail.SampleName</span></div>
-                    <div class="survey-overview-item survey-overview-item-wide"><span class="overview-label">Title</span><span class="overview-value">@Detail.Title</span></div>
-                    <div class="survey-overview-item survey-overview-item-wide"><span class="overview-label">Sub Title</span><span class="overview-value">@Detail.SubTitle</span></div>
+                    <div class="survey-overview-item"><span class="overview-label">Sample</span><span class="overview-value">@Detail.SampleName</span></div>
                     <div class="survey-overview-item"><span class="overview-label">Survey Frequency</span><span class="overview-value">@Detail.SurveyFrequency</span></div>
                     <div class="survey-overview-item"><span class="overview-label">Version</span><span class="overview-value">@Detail.Version</span></div>
-                    <div class="survey-overview-item"><span class="overview-label">Survey Date</span><span class="overview-value">@Detail.SurveyDate.ToString("yyyy-MM-dd")</span></div>
-                    <div class="survey-overview-item"><span class="overview-label">Reference Date</span><span class="overview-value">@Detail.ReferenceDate.ToString("yyyy-MM-dd")</span></div>
                     <div class="survey-overview-item"><span class="overview-label">HQ Survey Admin</span><span class="overview-value">@Detail.HqSurveyAdmin</span></div>
                     <div class="survey-overview-item"><span class="overview-label">Project Code</span><span class="overview-value">@Detail.ProjectCode</span></div>
-                    <div class="survey-overview-item"><span class="overview-label">Survey Start</span><span class="overview-value">@Detail.SurveyStartDate.ToString("yyyy-MM-dd")</span></div>
-                    <div class="survey-overview-item"><span class="overview-label">Survey Stop</span><span class="overview-value">@Detail.SurveyStopDate.ToString("yyyy-MM-dd")</span></div>
+                    <div class="survey-overview-item"><span class="overview-label">Date Range</span><span class="overview-value">@($"{Detail.SurveyStartDate:MM-dd-yyyy} - {Detail.SurveyStopDate:MM-dd-yyyy}")</span></div>
+                    <div class="survey-overview-item"><span class="overview-label">Budget Allocation</span><span class="overview-value">@Detail.BudgetAllocation.ToString("C0")</span></div>
                 </div>
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-header">Survey Count Insights</div>
+        <div class="card chart-panel-card">
             <div class="card-body top-card-body">
-                <div class="count-summary-tiles">
-                    <div class="count-summary-tile">
-                        <div class="metric-label">Survey Records</div>
-                        <div class="metric-value">@RelatedSurveyRecords.Count</div>
-                    </div>
-                    <div class="count-summary-tile">
-                        <div class="metric-label">Total Received</div>
-                        <div class="metric-value">@Detail.TotalReceived</div>
-                    </div>
-                    <div class="count-summary-tile">
-                        <div class="metric-label">Total Deleted</div>
-                        <div class="metric-value">@Detail.TotalDeleted</div>
-                    </div>
-                    <div class="count-summary-tile">
-                        <div class="metric-label">Budget Allocation</div>
-                        <div class="metric-value">@Detail.BudgetAllocation.ToString("C0")</div>
-                    </div>
-                    <div class="count-summary-tile count-summary-tile-wide">
-                        <div class="metric-label">Received vs Deleted</div>
-                        <div class="count-stack">
-                            <span class="count-stack-received" style="width:@($"{ReceivedPercent:0.##}%")"></span>
-                            <span class="count-stack-deleted" style="width:@($"{DeletedPercent:0.##}%")"></span>
-                        </div>
-                        <div class="count-stack-meta">
-                            <span class="count-stack-received-text">Received: @Detail.TotalReceived (@ReceivedPercent.ToString("0.0")%)</span>
-                            <span class="count-stack-deleted-text">Deleted: @Detail.TotalDeleted (@DeletedPercent.ToString("0.0")%)</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="count-chart-grid">
-                    <div class="count-chart-card">
-                        <div class="count-chart-title">OpDom Status Distribution</div>
-                        <div class="count-chart-visual">
-                            <div class="response-pie response-pie-sm" style="background:@BuildCountPie(OpDomChartItems);">
-                                <div class="response-pie-center response-pie-center-sm">
-                                    <div class="response-pie-label">OpDom Total</div>
-                                    <div class="response-pie-value">@GetChartTotal(OpDomChartItems)</div>
-                                </div>
-                            </div>
-                            <div class="response-legend response-legend-wide">
-                                @foreach (var item in OpDomChartItems)
-                                {
-                                    <div class="legend-item">
-                                        <span class="legend-swatch" style="background:@item.Color"></span>
-                                        <span class="legend-label">@item.Label</span>
-                                        <span class="legend-value">@($"{item.Count} ({GetChartPercent(item.Count, OpDomChartItems)})")</span>
-                                    </div>
-                                }
+                <div class="count-chart-card">
+                    <div class="count-chart-title">OpDom Status Distribution</div>
+                    <div class="count-chart-visual">
+                        <div class="response-pie response-pie-sm" style="background:@BuildCountPie(OpDomChartItems);">
+                            <div class="response-pie-center response-pie-center-sm">
+                                <div class="response-pie-label">OpDom Total</div>
+                                <div class="response-pie-value">@GetChartTotal(OpDomChartItems)</div>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="count-chart-card">
-                        <div class="count-chart-title">DCMS Code Distribution</div>
-                        <div class="count-chart-visual">
-                            <div class="response-pie response-pie-sm" style="background:@BuildCountPie(DcmsChartItems);">
-                                <div class="response-pie-center response-pie-center-sm">
-                                    <div class="response-pie-label">DCMS Total</div>
-                                    <div class="response-pie-value">@GetChartTotal(DcmsChartItems)</div>
-                                </div>
-                            </div>
-                            <div class="response-legend response-legend-wide">
-                                @foreach (var item in DcmsChartItems)
-                                {
-                                    <div class="legend-item">
-                                        <span class="legend-swatch" style="background:@item.Color"></span>
-                                        <span class="legend-label">@item.Label</span>
-                                        <span class="legend-value">@($"{item.Count} ({GetChartPercent(item.Count, DcmsChartItems)})")</span>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <div class="poid-lookup-shell mb-3">
-        <form class="poid-search-form" @onsubmit="LookupByPoid" @onsubmit:preventDefault="true">
-            <button class="poid-search-icon" type="submit" title="Find Record">
-                <span class="bi bi-search" aria-hidden="true"></span>
-            </button>
-            <input class="poid-search-input"
-                   placeholder="Find record by POID or Target POID"
-                   @bind="PoidLookupText"
-                   @bind:event="oninput" />
-            <button class="poid-search-button" type="submit">Find</button>
-            <button class="poid-clear-button" type="button" @onclick="ClearPoidLookup">Clear</button>
-        </form>
-        @if (!string.IsNullOrWhiteSpace(PoidLookupMessage))
-        {
-            <div class="poid-lookup-message">@PoidLookupMessage</div>
-        }
-    </div>
-
-    <div class="card mb-3">
-        <div class="card-header">Related Records</div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-striped align-middle mb-0 table-sm">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Sample ID</th>
-                            <th>Reference Date</th>
-                            <th>POID</th>
-                            <th>Target POID</th>
-                            <th>Mode</th>
-                            <th>State</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var record in RelatedSurveyRecords.Take(10))
-                        {
-                            <tr>
-                                <td>@record.SampleId</td>
-                                <td>@record.ReferenceDate.ToString("yyyy-MM-dd")</td>
-                                <td>@record.Poid</td>
-                                <td>@record.TargetPoid</td>
-                                <td>@record.Mode</td>
-                                <td>@record.StateAlpha</td>
-                                <td>
-                                    <a class="btn btn-sm btn-outline-primary" href="@BuildRecordHref(record)">Open</a>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="card-footer small text-muted">
-            Showing up to 10 records here. Use POID lookup for direct navigation to a specific record.
-        </div>
-    </div>
-
-    <div class="card mb-3">
-        <div class="card-header">Participating States and Collection Windows</div>
-        <div class="card-body">
-            <div class="small text-muted mb-2">
-                Survey Designer key: Published (P), NASS Review (R), Draft (D), Emergency Edit (E).
-            </div>
-            <div class="row g-3">
-                <div class="col-lg-5">
-                    <h6 class="mb-2">Mode Start and Stop Dates</h6>
-                    <div class="table-responsive">
-                        <table class="table table-sm table-striped align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Start</th>
-                                    <th>Mode</th>
-                                    <th>Stop</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var mode in Detail.Modes.OrderBy(m => m.StartDate))
-                                {
-                                    <tr>
-                                        <td>@mode.StartDate.ToString("yyyy-MM-dd")</td>
-                                        <td>@mode.Mode</td>
-                                        <td>@mode.StopDate.ToString("yyyy-MM-dd")</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="col-lg-7">
-                    <h6 class="mb-2">Participating States (FIPS + Status)</h6>
-                    @if (ParticipatingStates.Count == 0)
-                    {
-                        <div class="text-muted">No states found for this survey.</div>
-                    }
-                    else
-                    {
-                        <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-2">
-                            @foreach (var state in ParticipatingStates)
+                        <div class="response-legend response-legend-wide">
+                            @foreach (var item in OpDomChartItems)
                             {
-                                <div class="col">
-                                    <div class="border rounded px-2 py-1 bg-light">
-                                        <strong>@state.StateAlpha @state.StateId</strong> @state.SurveyDesignerStatus
-                                    </div>
+                                <div class="legend-item">
+                                    <span class="legend-swatch" style="background:@item.Color"></span>
+                                    <span class="legend-label">@item.Label</span>
+                                    <span class="legend-value">@($"{item.Count} ({GetChartPercent(item.Count, OpDomChartItems)})")</span>
                                 </div>
                             }
                         </div>
-                    }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card chart-panel-card">
+            <div class="card-body top-card-body">
+                <div class="count-chart-card">
+                    <div class="count-chart-title">DCMS Code Distribution</div>
+                    <div class="count-chart-visual">
+                        <div class="response-pie response-pie-sm" style="background:@BuildCountPie(DcmsChartItems);">
+                            <div class="response-pie-center response-pie-center-sm">
+                                <div class="response-pie-label">DCMS Total</div>
+                                <div class="response-pie-value">@GetChartTotal(DcmsChartItems)</div>
+                            </div>
+                        </div>
+                        <div class="response-legend response-legend-wide">
+                            @foreach (var item in DcmsChartItems)
+                            {
+                                <div class="legend-item">
+                                    <span class="legend-swatch" style="background:@item.Color"></span>
+                                    <span class="legend-label">@item.Label</span>
+                                    <span class="legend-value">@($"{item.Count} ({GetChartPercent(item.Count, DcmsChartItems)})")</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="card mb-3">
-        <div class="card-header">Questionnaire and Specifications</div>
+        <div class="widget-title">Survey Records</div>
         <div class="card-body">
-            <div class="row g-2 mb-3 align-items-center">
+            <div class="poid-lookup-shell mb-2">
+                <form class="poid-search-form" @onsubmit="LookupByPoid" @onsubmit:preventDefault="true">
+                    <span class="poid-search-icon bi bi-search" aria-hidden="true"></span>
+                    <input class="poid-search-input"
+                           placeholder="Filter records by SKey"
+                           @bind="PoidLookupText"
+                           @bind:event="oninput" />
+                    <div class="poid-search-actions">
+                        <button class="poid-search-button" type="submit">Find</button>
+                        <button class="poid-clear-button" type="button" @onclick="ClearPoidLookup">Clear</button>
+                    </div>
+                </form>
+                @if (!string.IsNullOrWhiteSpace(PoidLookupMessage))
+                {
+                    <div class="poid-lookup-message">@PoidLookupMessage</div>
+                }
+            </div>
+
+            <div class="row g-2 mb-2 align-items-center">
                 <div class="col-md-3">
                     <label class="form-label mb-0">Staff Role</label>
                 </div>
@@ -258,58 +162,53 @@ else
                 </div>
             </div>
 
-            @if (VisibleSurveyDesignerAssociations.Count == 0)
-            {
-                <div class="text-muted">No questionnaire links are visible for the selected role.</div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-sm table-striped align-middle mb-0">
-                        <thead class="table-light">
+            <div class="table-wrap">
+                <table class="table-surveys">
+                    <thead>
+                        <tr>
+                            <th>Fips</th>
+                            <th>State</th>
+                            <th>SKey</th>
+                            <th>Status</th>
+                            <th>Paper</th>
+                            <th>CAWI</th>
+                            <th>CAPI</th>
+                            <th>Specifications</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!FilteredInstanceRows.Any())
+                        {
                             <tr>
-                                <th>Questionnaire</th>
-                                <th>Format</th>
-                                <th>Status</th>
-                                <th>Mode</th>
-                                <th>Version</th>
-                                <th>Questionnaire Link</th>
-                                <th>Specifications</th>
-                                <th>Metadata</th>
+                                <td colspan="8" class="text-muted">No matching records for current filter.</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var association in VisibleSurveyDesignerAssociations)
+                        }
+                        else
+                        {
+                            @foreach (var row in FilteredInstanceRows)
                             {
-                                <tr>
-                                    <td>@association.QuestionnaireId</td>
-                                    <td>@association.QuestionnaireFormat</td>
-                                    <td>@association.QuestionnaireStatus</td>
-                                    <td>@association.CollectionMode</td>
-                                    <td>@association.QuestionnaireVersion</td>
-                                    <td><a href="@association.QuestionnaireLink" target="_blank" rel="noopener noreferrer">Open</a></td>
+                                <tr class="survey-row" @onclick="@(() => Navigation.NavigateTo(BuildRecordHref(row)))">
+                                    <td>@row.Fips</td>
+                                    <td>@row.State</td>
                                     <td>
-                                        <a href="@association.SpecificationsLink" target="_blank" rel="noopener noreferrer">Open</a>
-                                        <details class="mt-1">
-                                            <summary class="small">Item codes</summary>
-                                            <ul class="mb-0 mt-1 small">
-                                                @foreach (var spec in association.SpecificationItems)
-                                                {
-                                                    <li><strong>@spec.ItemCode</strong>: @spec.Description</li>
-                                                }
-                                            </ul>
-                                        </details>
+                                        <a class="table-link" href="@BuildRecordHref(row)">@row.Skey</a>
                                     </td>
-                                    <td><a href="@association.MetadataLink" target="_blank" rel="noopener noreferrer">Open</a></td>
+                                    <td>@row.Status</td>
+                                    <td>@BuildGridLink(row.PaperLabel, row.PaperLink)</td>
+                                    <td>@BuildGridLink(row.CawiLabel, row.CawiLink)</td>
+                                    <td>@BuildGridLink(row.CapiLabel, row.CapiLink)</td>
+                                    <td>@BuildGridLink(row.SpecLabel, row.SpecLink)</td>
                                 </tr>
                             }
-                        </tbody>
-                    </table>
-                </div>
-            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer small text-muted">
+            Select an SKey row to open the record-level specifications view.
         </div>
     </div>
-
 }
 
 @code {
@@ -325,7 +224,7 @@ else
     private string PoidLookupText { get; set; } = "";
     private string? PoidLookupMessage { get; set; }
     private List<app_blazor.Services.SurveyRecordIndexItem> RelatedSurveyRecords { get; set; } = new();
-    private List<ParticipatingStateItem> ParticipatingStates { get; set; } = new();
+    private List<InstanceGridRow> InstanceRows { get; set; } = new();
     private string StaffRole { get; set; } = "NASS";
     private static readonly string[] ChartPalette =
     {
@@ -344,6 +243,19 @@ else
     private List<CountSlice> DcmsChartItems => BuildChartSlices(Detail?.DcmsCounts.Select(c => (c.Code, c.Definition, c.Count)));
     private double ReceivedPercent => GetPercent(Detail?.TotalReceived ?? 0, (Detail?.TotalReceived ?? 0) + (Detail?.TotalDeleted ?? 0));
     private double DeletedPercent => GetPercent(Detail?.TotalDeleted ?? 0, (Detail?.TotalReceived ?? 0) + (Detail?.TotalDeleted ?? 0));
+
+    private IEnumerable<InstanceGridRow> FilteredInstanceRows
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(PoidLookupText))
+                return InstanceRows;
+
+            var term = PoidLookupText.Trim();
+            return InstanceRows.Where(r =>
+                r.Skey.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -366,7 +278,13 @@ else
         }
 
         var instance = SurveyInstanceService.FindInstance(parsedReferenceDate, surveyId.Value, SampleId);
-        if (instance is null || string.IsNullOrWhiteSpace(instance.SampleId) || instance.Status.Equals("IN HQ REVIEW", StringComparison.OrdinalIgnoreCase))
+        var fallbackInstance = SurveyInstanceService.Instances
+            .Where(i => i.SurveyId == surveyId.Value && i.SampleId.Equals(SampleId, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(i => i.ReferenceDate)
+            .FirstOrDefault();
+        var effectiveInstance = instance ?? fallbackInstance;
+
+        if (effectiveInstance is null || string.IsNullOrWhiteSpace(effectiveInstance.SampleId) || effectiveInstance.Status.Equals("IN HQ REVIEW", StringComparison.OrdinalIgnoreCase))
         {
             ErrorMessage = "The selected survey instance is not yet available (sample not populated or status is IN HQ REVIEW).";
             return;
@@ -397,34 +315,57 @@ else
     private void LoadSurveySummaries(int surveyId)
     {
         RelatedSurveyRecords = SurveyInstanceService.GetSurveyRecordIndex(surveyId).ToList();
-        var surveyInstances = SurveyInstanceService.GetSurveyInstances(surveyId);
-        ParticipatingStates = surveyInstances
-            .GroupBy(i => new { i.StateAlpha, i.StateId })
-            .Select(g => new ParticipatingStateItem(
-                g.Key.StateAlpha,
-                g.Key.StateId,
-                GetSurveyDesignerStatus(g.Key.StateAlpha, g.Key.StateId)))
-            .OrderBy(s => s.StateId)
+        var association = VisibleSurveyDesignerAssociations;
+        var paper = association.FirstOrDefault(a => a.QuestionnaireFormat.Equals("Paper", StringComparison.OrdinalIgnoreCase));
+        var cawi = association.FirstOrDefault(a => a.CollectionMode.Equals("CAWI", StringComparison.OrdinalIgnoreCase));
+        var capi = association.FirstOrDefault(a => a.CollectionMode.Equals("CAPI", StringComparison.OrdinalIgnoreCase));
+        var spec = association.FirstOrDefault();
+
+        InstanceRows = RelatedSurveyRecords
+            .Select(r =>
+            {
+                return new InstanceGridRow(
+                    r.StateId,
+                    r.StateAlpha,
+                    r.SKey,
+                    ResolveGridStatus(association),
+                    r.Poid,
+                    r.TargetPoid,
+                    r.SampleId,
+                    r.ReferenceDate,
+                    "PDF | BOOKLET PDF",
+                    paper?.QuestionnaireLink,
+                    "CAWI - SD",
+                    cawi?.QuestionnaireLink,
+                    "CAPI - SD",
+                    capi?.QuestionnaireLink,
+                    "Specifications",
+                    spec?.SpecificationsLink);
+            })
+            .OrderBy(r => r.Fips)
+            .ThenBy(r => r.Skey)
             .ToList();
+    }
+
+    private static string ResolveGridStatus(List<app_blazor.Services.SurveyDesignerAssociation> associations)
+    {
+        var status = associations.FirstOrDefault()?.QuestionnaireStatus ?? "Published";
+        return status.ToUpperInvariant();
     }
 
     private Task LookupByPoid()
     {
-        PoidLookupMessage = null;
-        if (Detail is null || string.IsNullOrWhiteSpace(PoidLookupText))
+        if (string.IsNullOrWhiteSpace(PoidLookupText))
         {
-            PoidLookupMessage = "Enter a POID value to search.";
+            PoidLookupMessage = "Enter SKey to filter rows.";
             return Task.CompletedTask;
         }
 
-        var match = SurveyInstanceService.FindSurveyRecordByPoid(Detail.SurveyId, PoidLookupText);
-        if (match is null)
-        {
-            PoidLookupMessage = $"No record found for POID '{PoidLookupText}'.";
-            return Task.CompletedTask;
-        }
+        var count = FilteredInstanceRows.Count();
+        PoidLookupMessage = count == 0
+            ? $"No rows match '{PoidLookupText}'."
+            : $"Showing {count} matching row(s).";
 
-        Navigation.NavigateTo($"/surveys/record?referenceDate={match.ReferenceDate:yyyy-MM-dd}&surveyId={match.SurveyId}&sampleId={Uri.EscapeDataString(match.SampleId)}");
         return Task.CompletedTask;
     }
 
@@ -434,15 +375,28 @@ else
         PoidLookupMessage = null;
     }
 
-    private string BuildRecordHref(app_blazor.Services.SurveyRecordIndexItem record)
-        => $"/surveys/record?referenceDate={record.ReferenceDate:yyyy-MM-dd}&surveyId={record.SurveyId}&sampleId={Uri.EscapeDataString(record.SampleId)}";
+    private string BuildRecordHref(InstanceGridRow row)
+        => $"/surveys/record?referenceDate={row.ReferenceDate:yyyy-MM-dd}&surveyId={Detail?.SurveyId}&sampleId={Uri.EscapeDataString(row.SampleId)}&skey={Uri.EscapeDataString(row.Skey)}&state={Uri.EscapeDataString(row.State)}";
 
-    private static string GetSurveyDesignerStatus(string stateAlpha, string stateId)
+    private RenderFragment BuildGridLink(string label, string? href) => builder =>
     {
-        var statuses = new[] { "P", "R", "D", "E" };
-        var seed = HashCode.Combine(stateAlpha, stateId);
-        return statuses[Math.Abs(seed) % statuses.Length];
-    }
+        var seq = 0;
+        if (string.IsNullOrWhiteSpace(href))
+        {
+            builder.OpenElement(seq++, "span");
+            builder.AddAttribute(seq++, "class", "text-muted");
+            builder.AddContent(seq++, "N/A");
+            builder.CloseElement();
+            return;
+        }
+
+        builder.OpenElement(seq++, "a");
+        builder.AddAttribute(seq++, "href", href);
+        builder.AddAttribute(seq++, "target", "_blank");
+        builder.AddAttribute(seq++, "rel", "noopener noreferrer");
+        builder.AddContent(seq++, label);
+        builder.CloseElement();
+    };
 
     private static string ParseStaffRole(string? value)
         => string.Equals(value, "NASDA", StringComparison.OrdinalIgnoreCase) ? "NASDA" : "NASS";
@@ -464,8 +418,6 @@ else
                 a.QuestionnaireStatus.Equals("NASS Review", StringComparison.OrdinalIgnoreCase))
             .ToList();
     }
-
-    private sealed record ParticipatingStateItem(string StateAlpha, string StateId, string SurveyDesignerStatus);
 
     private static List<CountSlice> BuildChartSlices(IEnumerable<(string Code, string Definition, int Count)>? source)
     {
@@ -516,6 +468,24 @@ else
             return 0;
         return (double)count / total * 100d;
     }
+
+    private sealed record InstanceGridRow(
+        string Fips,
+        string State,
+        string Skey,
+        string Status,
+        string Poid,
+        string TargetPoid,
+        string SampleId,
+        DateTime ReferenceDate,
+        string PaperLabel,
+        string? PaperLink,
+        string CawiLabel,
+        string? CawiLink,
+        string CapiLabel,
+        string? CapiLink,
+        string SpecLabel,
+        string? SpecLink);
 
     private sealed record CountSlice(string Label, string Definition, int Count, string Color);
 }
