@@ -4,6 +4,20 @@
     color: var(--brand-navy);
 }
 
+.breadcrumb-mini {
+    font-size: 0.82rem;
+}
+
+.breadcrumb-mini a {
+    color: var(--brand-navy);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.breadcrumb-mini a:hover {
+    text-decoration: underline;
+}
+
 /* toolbar */
 .surveys-toolbar {
     display: flex;
@@ -219,6 +233,61 @@
     margin-top: 2rem;
 }
 
+.table-wrap {
+    border: 1px solid var(--brand-border);
+    border-radius: 16px;
+    overflow-x: auto;
+    overflow-y: visible;
+    background: var(--brand-background);
+    width: 100%;
+}
+
+.table-surveys {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+    table-layout: auto;
+}
+
+.table-surveys thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #5a9772;
+    color: #ffffff;
+    padding: 0.6rem 0.55rem;
+    text-align: left;
+    font-weight: 900;
+    border-bottom: 2px solid rgba(11, 43, 75, 0.45);
+    border-right: 2px solid rgba(255, 255, 255, 0.9);
+}
+
+.table-surveys thead th:last-child {
+    border-right: none;
+}
+
+.table-surveys td {
+    padding: 0.5rem 0.55rem;
+    border-bottom: 2px solid rgba(11, 43, 75, 0.28);
+    border-right: 2px solid rgba(11, 43, 75, 0.24);
+    background: #fff;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.table-surveys td:last-child {
+    border-right: none;
+}
+
+.table-surveys tbody tr.survey-row {
+    cursor: pointer;
+}
+
+.table-surveys tbody tr.survey-row:hover td {
+    background: rgba(31, 111, 63, 0.08);
+}
+
 .panel-title-row {
     display: flex;
     align-items: center;
@@ -374,7 +443,8 @@
     background: #d6dbe2;
     font-size: 0.85rem;
     line-height: 1;
-    padding-top: 1px;
+    padding-top: 0;
+    transform: translateY(-1px);
 }
 
 .filters-row {

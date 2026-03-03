@@ -2,8 +2,8 @@ using System.Globalization;
 
 namespace app_blazor.Services;
 
-// Assumption: "SurveyInstance" is an in-memory demo source representing a unique
-// (ReferenceDate, SurveyId, SampleId) combination. Replace with real persistence later.
+// "SurveyInstance" is an in-memory demo source representing a unique
+// (ReferenceDate, SurveyId, SampleId) combination. Randomly generated data for now.
 public sealed class SurveyInstanceService
 {
     private readonly List<SurveyInstance> _instances;
@@ -67,36 +67,47 @@ public sealed class SurveyInstanceService
             i.SurveyId == surveyId &&
             i.SampleId.Equals(sampleId, StringComparison.OrdinalIgnoreCase));
 
-        if (match is null)
-            return null;
+        var resolved = match;
+        if (resolved is null)
+        {
+            var baseInstance = _instances
+                .Where(i => i.SurveyId == surveyId && i.SampleId.Equals(sampleId, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(i => i.ReferenceDate)
+                .FirstOrDefault();
 
-        var fullRecord = BuildFullRecord(match);
-        var surveyDesignerAssociations = BuildSurveyDesignerAssociations(match);
+            if (baseInstance is null)
+                return null;
+
+            resolved = CreateSyntheticInstanceForDate(baseInstance, referenceDate.Date);
+        }
+
+        var fullRecord = BuildFullRecord(resolved);
+        var surveyDesignerAssociations = BuildSurveyDesignerAssociations(resolved);
         return new SurveyInstanceDetailResponse(
-            match.SampleId,
-            match.SampleName,
-            match.SurveyId,
-            match.Title,
-            match.SubTitle,
-            match.SurveyFrequency,
-            match.Version,
-            match.SurveyDate,
-            match.ReferenceDate,
-            match.SurveyStartDate,
-            match.SurveyStopDate,
-            match.HqSurveyAdmin,
-            match.ProjectCode,
-            match.Modes.Select(m => new ModeWindow(m.Mode, m.StartDate, m.StopDate)).ToList(),
-            match.OpDomCounts.Select(c => new CountItem(c.Code, c.Definition, c.Count)).ToList(),
-            match.DcmsCounts.Select(c => new CountItem(c.Code, c.Definition, c.Count)).ToList(),
-            match.TotalReceived,
-            match.TotalDeleted,
-            match.BudgetAllocation,
-            match.RespondentInstancesLast1Year,
-            match.RespondentInstancesLast3Years,
-            match.RespondentInstancesLast5Years,
-            match.ResponseHistoryRate,
-            match.ResponseHistoryBreakdown.Select(b => new ResponseHistoryItem(b.Label, b.Count)).ToList(),
+            resolved.SampleId,
+            resolved.SampleName,
+            resolved.SurveyId,
+            resolved.Title,
+            resolved.SubTitle,
+            resolved.SurveyFrequency,
+            resolved.Version,
+            resolved.SurveyDate,
+            resolved.ReferenceDate,
+            resolved.SurveyStartDate,
+            resolved.SurveyStopDate,
+            resolved.HqSurveyAdmin,
+            resolved.ProjectCode,
+            resolved.Modes.Select(m => new ModeWindow(m.Mode, m.StartDate, m.StopDate)).ToList(),
+            resolved.OpDomCounts.Select(c => new CountItem(c.Code, c.Definition, c.Count)).ToList(),
+            resolved.DcmsCounts.Select(c => new CountItem(c.Code, c.Definition, c.Count)).ToList(),
+            resolved.TotalReceived,
+            resolved.TotalDeleted,
+            resolved.BudgetAllocation,
+            resolved.RespondentInstancesLast1Year,
+            resolved.RespondentInstancesLast3Years,
+            resolved.RespondentInstancesLast5Years,
+            resolved.ResponseHistoryRate,
+            resolved.ResponseHistoryBreakdown.Select(b => new ResponseHistoryItem(b.Label, b.Count)).ToList(),
             surveyDesignerAssociations,
             fullRecord
         );
@@ -134,24 +145,143 @@ public sealed class SurveyInstanceService
 
     public IReadOnlyList<SurveyRecordIndexItem> GetSurveyRecordIndex(int surveyId)
     {
-        return _instances
-            .Where(i => i.SurveyId == surveyId)
-            .Select(i =>
-            {
-                var fullRecord = BuildFullRecord(i);
-                var poid = fullRecord.FirstOrDefault(f => f.Field == "poid")?.Value ?? string.Empty;
-                var targetPoid = fullRecord.FirstOrDefault(f => f.Field == "target_poid")?.Value ?? string.Empty;
-                return new SurveyRecordIndexItem(
-                    i.SurveyId,
-                    i.SampleId,
-                    i.ReferenceDate,
-                    poid,
-                    targetPoid,
-                    i.Mode,
-                    i.StateAlpha);
-            })
-            .OrderBy(i => i.Poid)
+        var records = new List<SurveyRecordIndexItem>();
+        foreach (var instance in _instances.Where(i => i.SurveyId == surveyId))
+        {
+            records.AddRange(BuildInstanceGridRecords(instance, 12));
+        }
+
+        return records
+            .OrderBy(i => i.ReferenceDate)
+            .ThenBy(i => i.StateId)
+            .ThenBy(i => i.SKey, StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    public IReadOnlyList<SurveyRespondentRecord> GetRespondentsForInstance(
+        DateTime referenceDate,
+        int surveyId,
+        string sampleId,
+        string? skey,
+        int count = 24)
+    {
+        var instance = _instances.FirstOrDefault(i =>
+            i.ReferenceDate.Date == referenceDate.Date &&
+            i.SurveyId == surveyId &&
+            i.SampleId.Equals(sampleId, StringComparison.OrdinalIgnoreCase));
+
+        var resolved = instance;
+        if (resolved is null)
+        {
+            var baseInstance = _instances
+                .Where(i => i.SurveyId == surveyId && i.SampleId.Equals(sampleId, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(i => i.ReferenceDate)
+                .FirstOrDefault();
+            if (baseInstance is null)
+                return [];
+
+            resolved = CreateSyntheticInstanceForDate(baseInstance, referenceDate.Date);
+        }
+
+        var respondentCount = Math.Max(12, count);
+        var records = new List<SurveyRespondentRecord>(respondentCount);
+        for (var i = 0; i < respondentCount; i++)
+        {
+            records.Add(new SurveyRespondentRecord(
+                i + 1,
+                surveyId,
+                sampleId,
+                referenceDate,
+                resolved.StateId,
+                resolved.StateAlpha,
+                skey ?? $"S-{surveyId}-{i + 1:D3}",
+                BuildFullRecord(resolved, i + 1)));
+        }
+
+        return records;
+    }
+
+    public IReadOnlyList<DateTime> GetReferenceDatesForSurveySample(int surveyId, string sampleId)
+    {
+        var exact = _instances
+            .Where(i => i.SurveyId == surveyId && i.SampleId.Equals(sampleId, StringComparison.OrdinalIgnoreCase))
+            .Select(i => i.ReferenceDate.Date)
+            .Distinct()
+            .OrderByDescending(d => d)
+            .ToList();
+
+        if (exact.Count > 0)
+        {
+            if (exact.Count >= 3)
+                return exact;
+
+            var expanded = ExpandReferenceDates(exact.First(), 6)
+                .Union(exact)
+                .Distinct()
+                .OrderByDescending(d => d)
+                .ToList();
+            return expanded;
+        }
+
+        var surveyDates = _instances
+            .Where(i => i.SurveyId == surveyId)
+            .Select(i => i.ReferenceDate.Date)
+            .Distinct()
+            .OrderByDescending(d => d)
+            .ToList();
+
+        if (surveyDates.Count > 0)
+            return ExpandReferenceDates(surveyDates.First(), 6);
+
+        return [];
+    }
+
+    private static List<DateTime> ExpandReferenceDates(DateTime seedDate, int totalCount)
+    {
+        var dates = new HashSet<DateTime> { seedDate.Date };
+        var offset = 1;
+        while (dates.Count < totalCount)
+        {
+            dates.Add(seedDate.AddMonths(-offset).Date);
+            if (dates.Count >= totalCount)
+                break;
+            dates.Add(seedDate.AddMonths(offset).Date);
+            offset++;
+        }
+
+        return dates.OrderByDescending(d => d).ToList();
+    }
+
+    private static SurveyInstance CreateSyntheticInstanceForDate(SurveyInstance source, DateTime referenceDate)
+    {
+        var delta = referenceDate.Date - source.ReferenceDate.Date;
+        return source with
+        {
+            ReferenceDate = referenceDate.Date,
+            SurveyDate = referenceDate.Date,
+            SurveyStartDate = source.SurveyStartDate.Add(delta),
+            SurveyStopDate = source.SurveyStopDate.Add(delta),
+            Modes = source.Modes
+                .Select(m => new ModeWindow(m.Mode, m.StartDate.Add(delta), m.StopDate.Add(delta)))
+                .ToList()
+        };
+    }
+
+    public IReadOnlyList<SurveyRespondentRecord> GetSurveyRespondentRecords(int surveyId)
+    {
+        var instances = _instances
+            .Where(i => i.SurveyId == surveyId)
+            .OrderBy(i => i.ReferenceDate)
+            .ThenBy(i => i.SampleId)
+            .ToList();
+
+        var rows = new List<SurveyRespondentRecord>();
+        foreach (var instance in instances)
+        {
+            rows.AddRange(GetRespondentsForInstance(instance.ReferenceDate, instance.SurveyId, instance.SampleId, $"S-{instance.SurveyId}-001", 12));
+        }
+
+        return rows;
     }
 
     public SurveyRecordLookupResult? FindSurveyRecordByPoid(int surveyId, string poid)
@@ -514,6 +644,132 @@ public sealed class SurveyInstanceService
                     new("Partial", 1),
                     new("Refused", 1)
                 }
+            ),
+            new SurveyInstance(
+                SurveyId: 1004,
+                SampleId: "SMP-1004-A",
+                SampleName: "DIS Monthly Frame",
+                ReferenceDate: new DateTime(2026, 2, 15),
+                Title: "Dairy Inventory Survey (DIS)",
+                SubTitle: "Monthly inventory update",
+                SurveyFrequency: "Monthly",
+                Version: "v5.3",
+                SurveyDate: new DateTime(2026, 2, 15),
+                SurveyStartDate: new DateTime(2026, 2, 1),
+                SurveyStopDate: new DateTime(2026, 2, 28),
+                HqSurveyAdmin: "R. Gomez",
+                ProjectCode: "DIS-2026-02",
+                Status: "In progress",
+                OmbNumber: "0535-0321",
+                OmbExpires: new DateTime(2027, 12, 31),
+                State: "WI",
+                Region: "GLR",
+                StateId: "55",
+                StateAlpha: "WI",
+                DcmsCodeId: "A1",
+                OpDomStatusId: "Active",
+                EnumeratorId: "E-105",
+                EnumeratorName: "H. Gomez",
+                ManagerId: "M-204",
+                ManagerName: "R. Lopez",
+                CoachId: "C-305",
+                CoachName: "B. Chen",
+                EnumeratorNotes: "February cycle follow-up.",
+                ResponseCode: "Complete",
+                Mode: "CAPI",
+                Modes: new List<ModeWindow>
+                {
+                    new("CAPI", new DateTime(2026, 2, 1), new DateTime(2026, 2, 28)),
+                    new("MAIL", new DateTime(2026, 2, 3), new DateTime(2026, 2, 19))
+                },
+                OpDomCounts: new List<CountItem>
+                {
+                    new("Active", "Open cases currently in field", 214),
+                    new("Complete", "Final disposition received", 521),
+                    new("Refused", "Refusal recorded", 19)
+                },
+                DcmsCounts: new List<CountItem>
+                {
+                    new("A1", "Accepted and complete", 446),
+                    new("B2", "Partial response", 62),
+                    new("C3", "Non-contact", 58)
+                },
+                TotalReceived: 544,
+                TotalDeleted: 9,
+                BudgetAllocation: 145_000m,
+                RespondentInstancesLast1Year: 2,
+                RespondentInstancesLast3Years: 4,
+                RespondentInstancesLast5Years: 5,
+                ResponseHistoryRate: 62.5m,
+                ResponseHistoryBreakdown: new List<ResponseHistoryItem>
+                {
+                    new("Completed", 3),
+                    new("Partial", 1),
+                    new("Refused", 1)
+                }
+            ),
+            new SurveyInstance(
+                SurveyId: 1004,
+                SampleId: "SMP-1004-A",
+                SampleName: "DIS Monthly Frame",
+                ReferenceDate: new DateTime(2026, 3, 15),
+                Title: "Dairy Inventory Survey (DIS)",
+                SubTitle: "Monthly inventory update",
+                SurveyFrequency: "Monthly",
+                Version: "v5.4",
+                SurveyDate: new DateTime(2026, 3, 15),
+                SurveyStartDate: new DateTime(2026, 3, 1),
+                SurveyStopDate: new DateTime(2026, 3, 31),
+                HqSurveyAdmin: "R. Gomez",
+                ProjectCode: "DIS-2026-03",
+                Status: "Not started",
+                OmbNumber: "0535-0321",
+                OmbExpires: new DateTime(2027, 12, 31),
+                State: "WI",
+                Region: "GLR",
+                StateId: "55",
+                StateAlpha: "WI",
+                DcmsCodeId: "B2",
+                OpDomStatusId: "Active",
+                EnumeratorId: "E-105",
+                EnumeratorName: "H. Gomez",
+                ManagerId: "M-204",
+                ManagerName: "R. Lopez",
+                CoachId: "C-305",
+                CoachName: "B. Chen",
+                EnumeratorNotes: "March cycle pending start.",
+                ResponseCode: "Pending",
+                Mode: "CAPI",
+                Modes: new List<ModeWindow>
+                {
+                    new("CAPI", new DateTime(2026, 3, 1), new DateTime(2026, 3, 31)),
+                    new("MAIL", new DateTime(2026, 3, 4), new DateTime(2026, 3, 22))
+                },
+                OpDomCounts: new List<CountItem>
+                {
+                    new("Active", "Open cases currently in field", 233),
+                    new("Complete", "Final disposition received", 498),
+                    new("Refused", "Refusal recorded", 24)
+                },
+                DcmsCounts: new List<CountItem>
+                {
+                    new("A1", "Accepted and complete", 429),
+                    new("B2", "Partial response", 69),
+                    new("C3", "Non-contact", 57)
+                },
+                TotalReceived: 529,
+                TotalDeleted: 13,
+                BudgetAllocation: 149_000m,
+                RespondentInstancesLast1Year: 2,
+                RespondentInstancesLast3Years: 4,
+                RespondentInstancesLast5Years: 5,
+                ResponseHistoryRate: 60.0m,
+                ResponseHistoryBreakdown: new List<ResponseHistoryItem>
+                {
+                    new("Completed", 3),
+                    new("Partial", 1),
+                    new("No response", 1)
+                }
             )
         };
         ExpandInstances(instances, 100);
@@ -656,9 +912,33 @@ public sealed class SurveyInstanceService
         );
     }
 
-    private static List<DetailField> BuildFullRecord(SurveyInstance instance)
+    private static List<SurveyRecordIndexItem> BuildInstanceGridRecords(SurveyInstance instance, int count)
     {
-        var rand = CreateStableRandom(instance.SurveyId, instance.SampleId, instance.ReferenceDate);
+        var records = new List<SurveyRecordIndexItem>(count);
+        var itemCount = Math.Max(6, count);
+        for (var i = 0; i < itemCount; i++)
+        {
+            var fullRecord = BuildFullRecord(instance, i + 1);
+            var poid = fullRecord.FirstOrDefault(f => f.Field == "poid")?.Value ?? string.Empty;
+            var targetPoid = fullRecord.FirstOrDefault(f => f.Field == "target_poid")?.Value ?? string.Empty;
+            records.Add(new SurveyRecordIndexItem(
+                instance.SurveyId,
+                instance.SampleId,
+                instance.ReferenceDate,
+                poid,
+                targetPoid,
+                instance.Mode,
+                instance.StateAlpha,
+                instance.StateId,
+                $"S-{instance.SurveyId}-{(i + 1):D3}"));
+        }
+
+        return records;
+    }
+
+    private static List<DetailField> BuildFullRecord(SurveyInstance instance, int variation = 0)
+    {
+        var rand = CreateStableRandom(instance.SurveyId, instance.SampleId, instance.ReferenceDate, variation);
         var countyId = rand.Next(1, 999).ToString("D3");
         var tract = rand.Next(100000, 999999).ToString();
         var subtract = rand.Next(10, 99).ToString();
@@ -680,10 +960,18 @@ public sealed class SurveyInstanceService
         var enumNotes = instance.EnumeratorNotes;
         var sampNo = rand.Next(100000, 999999).ToString();
         var epaId = $"EPA-{rand.Next(1000, 9999)}";
-        var labels = $"Label {rand.Next(1, 5)}";
+        var label1 = $"L1-{rand.Next(10, 99)}";
+        var label2 = $"L2-{rand.Next(10, 99)}";
+        var label3 = $"L3-{rand.Next(10, 99)}";
+        var label4 = $"L4-{rand.Next(10, 99)}";
+        var label5 = $"L5-{rand.Next(10, 99)}";
+        var labels = $"{label1},{label2},{label3},{label4},{label5}";
         var otherField = $"Other {rand.Next(10, 99)}";
         var latitude = (30 + rand.NextDouble() * 15).ToString("0.0000", CultureInfo.InvariantCulture);
         var longitude = (-120 + rand.NextDouble() * 15).ToString("0.0000", CultureInfo.InvariantCulture);
+        var frameId = $"FR-{rand.Next(1000, 9999)}";
+        var segmentId = $"SEG-{rand.Next(1000, 9999)}";
+        var afTract = $"AF-{rand.Next(10000, 99999)}";
         var surveyWebCode = $"WEB-{rand.Next(100000, 999999)}";
         var tier = $"T{rand.Next(1, 4)}";
         var xstateLink = $"XSL-{rand.Next(1000, 9999)}";
@@ -751,9 +1039,19 @@ public sealed class SurveyInstanceService
             new("enum_notes", enumNotes),
             new("samp_no", sampNo),
             new("epa_id", epaId),
+            new("label1", label1),
+            new("label2", label2),
+            new("label3", label3),
+            new("label4", label4),
+            new("label5", label5),
             new("label1-5", labels),
             new("other_field", otherField),
+            new("latitude", latitude),
+            new("longitude", longitude),
             new("latitude longitude", $"{latitude}, {longitude}"),
+            new("frame_id", frameId),
+            new("segment_id", segmentId),
+            new("af_tract", afTract),
             new("response_code", instance.ResponseCode),
             new("state-abbrev", instance.StateAlpha),
             new("survey code for web access", surveyWebCode),
@@ -764,10 +1062,10 @@ public sealed class SurveyInstanceService
         };
     }
 
-    private static Random CreateStableRandom(int surveyId, string sampleId, DateTime referenceDate)
+    private static Random CreateStableRandom(int surveyId, string sampleId, DateTime referenceDate, int variation = 0)
     {
         var hash = StableHash(sampleId);
-        var seed = HashCode.Combine(surveyId, hash, referenceDate.Year, referenceDate.Month, referenceDate.Day);
+        var seed = HashCode.Combine(surveyId, hash, referenceDate.Year, referenceDate.Month, referenceDate.Day, variation);
         return new Random(seed);
     }
 
@@ -964,7 +1262,9 @@ public sealed record SurveyRecordIndexItem(
     string Poid,
     string TargetPoid,
     string Mode,
-    string StateAlpha
+    string StateAlpha,
+    string StateId,
+    string SKey
 );
 
 public sealed record SurveyRecordLookupResult(
@@ -973,6 +1273,17 @@ public sealed record SurveyRecordLookupResult(
     string SampleId,
     string Poid,
     string TargetPoid
+);
+
+public sealed record SurveyRespondentRecord(
+    int RespondentId,
+    int SurveyId,
+    string SampleId,
+    DateTime ReferenceDate,
+    string StateId,
+    string StateAlpha,
+    string SKey,
+    List<DetailField> Fields
 );
 
 public sealed record ResponseHistory(
