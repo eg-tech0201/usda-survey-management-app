@@ -249,7 +249,7 @@
             await Js.InvokeVoidAsync("smsPositionFilterPopover", _filtersAnchor, _filtersPop);
     }
 
-    private async Task CloseFilters()
+    private void CloseFilters()
     {
         ShowFilters = false;
     }
@@ -264,7 +264,7 @@
         Navigation.NavigateTo($"/surveys/results{BuildQuery(includeViewAll: false)}");
     }
 
-    private async Task ToggleFilters()
+    private void ToggleFilters()
     {
         ShowFilters = !ShowFilters;
     }
