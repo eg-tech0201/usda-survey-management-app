@@ -1,4 +1,4 @@
-using app_blazor.Components;
+using app_blazor;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +9,8 @@ builder.Services
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<app_blazor.Services.SurveyInstanceService>();
 builder.Services.AddSingleton<app_blazor.Services.UserRecentSurveyService>();
+builder.Services.AddScoped<app_blazor.Services.DemoUserContextService>();
+builder.Services.AddScoped<app_blazor.Services.DemoAuditTrailService>();
 
 var app = builder.Build();
 
