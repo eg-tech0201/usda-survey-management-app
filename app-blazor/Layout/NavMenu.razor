@@ -106,10 +106,7 @@
                     <span class="bi bi-search" aria-hidden="true"></span>
                 </button>
             </form>
-            <select class="role-select" value="@UserContext.CurrentRole" @onchange="OnRoleChanged">
-                <option value="Survey Manager">Survey Manager</option>
-                <option value="SMS Administrator">SMS Administrator</option>
-            </select>
+            <span class="role-pill">@UserContext.CurrentRole</span>
             <button type="button" class="icon-button" title="Notifications" @onclick="ToggleNotifs">
                 <span class="bi bi-bell" aria-hidden="true"></span>
                 <span class="badge">4</span>
@@ -149,13 +146,4 @@
         Navigation.NavigateTo(target);
     }
 
-    private void OnRoleChanged(ChangeEventArgs e)
-    {
-        var role = e.Value?.ToString();
-        if (string.IsNullOrWhiteSpace(role))
-            return;
-
-        UserContext.SetRole(role);
-        StateHasChanged();
-    }
 }

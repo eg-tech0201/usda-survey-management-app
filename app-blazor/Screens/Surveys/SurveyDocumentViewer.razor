@@ -27,17 +27,16 @@ else
                 <h1 class="viewer-title">@DisplayTitle</h1>
                 <div class="viewer-subtitle">@DisplaySubtitle</div>
             </div>
-            <div class="viewer-actions">
-                <button class="button-lite" type="button" @onclick="DownloadAsync">Download</button>
-                @if (!string.IsNullOrWhiteSpace(Source))
-                {
-                    <a class="button-lite button-link" href="@Source" target="_blank" rel="noopener noreferrer">Source Link</a>
-                }
-            </div>
-        </div>
-
-        <div class="viewer-banner">
-            Survey Review integration is still pending API specifications. This viewer renders an SMS demo artifact and keeps download behavior auditable.
+            <details class="viewer-actions-menu">
+                <summary>External Actions</summary>
+                <div class="viewer-actions-popover">
+                    <button class="button-lite viewer-menu-action" type="button" @onclick="DownloadAsync">Download</button>
+                    @if (!string.IsNullOrWhiteSpace(Source))
+                    {
+                        <a class="button-lite button-link viewer-menu-action" href="@Source" target="_blank" rel="noopener noreferrer">Open Source Link</a>
+                    }
+                </div>
+            </details>
         </div>
 
         <div class="viewer-grid">

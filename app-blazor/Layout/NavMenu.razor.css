@@ -73,19 +73,21 @@
     align-items: center;
     justify-content: center;
     box-shadow: 0 8px 18px rgba(31, 111, 63, 0.24);
+    flex: 0 0 30px;
 }
 
-.role-select {
+.global-search-button .bi {
+    margin-right: 0;
+}
+
+.role-pill {
     border: 1px solid rgba(255, 255, 255, 0.25);
     background: rgba(255, 255, 255, 0.12);
     color: #ffffff;
     border-radius: 999px;
     padding: 0.42rem 0.8rem;
     font-weight: 800;
-}
-
-.role-select option {
-    color: var(--brand-navy);
+    line-height: 1;
 }
 
 .navbar-brand {

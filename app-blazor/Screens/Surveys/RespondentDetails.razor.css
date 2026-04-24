@@ -303,11 +303,6 @@
     font-weight: 700;
 }
 
-.action-list {
-    display: grid;
-    gap: 0.55rem;
-}
-
 .action-link {
     display: inline-flex;
     align-items: center;
@@ -323,27 +318,69 @@
     line-height: 1.1;
 }
 
-.detail-tabs {
+.timeline-card-header,
+.snapshot-header {
     display: flex;
-    gap: 0.5rem;
-    padding: 0.85rem 1rem 0;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.8rem;
     flex-wrap: wrap;
+    margin-bottom: 0.75rem;
 }
 
-.detail-tab {
+.timeline-card-subtitle {
+    color: var(--brand-muted);
+    font-weight: 700;
+}
+
+.snapshot-actions-menu {
+    position: relative;
+}
+
+.snapshot-actions-menu summary {
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    cursor: pointer;
     border: 1px solid var(--brand-border);
     background: #ffffff;
-    color: var(--brand-navy);
     border-radius: 999px;
-    padding: 0.5rem 0.95rem;
+    padding: 0.45rem 0.85rem;
     font-weight: 900;
-    cursor: pointer;
+    color: var(--brand-navy);
 }
 
-.detail-tab.is-active {
-    background: linear-gradient(135deg, #1f6f3f, #5a9772);
-    border-color: #2f8f5b;
-    color: #ffffff;
+.snapshot-actions-menu summary::-webkit-details-marker {
+    display: none;
+}
+
+.snapshot-actions-menu summary::after {
+    content: "▾";
+    font-size: 0.78rem;
+}
+
+.snapshot-actions-menu[open] summary::after {
+    content: "▴";
+}
+
+.snapshot-actions-popover {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.55rem);
+    min-width: 250px;
+    display: grid;
+    gap: 0.55rem;
+    padding: 0.65rem;
+    border: 1px solid var(--brand-border);
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 16px 28px rgba(11, 43, 75, 0.16);
+    z-index: 10;
+}
+
+.snapshot-actions-popover .action-link {
+    width: 100%;
 }
 
 .snapshot-grid {
@@ -376,6 +413,11 @@
 .timeline-list {
     display: grid;
     gap: 0.85rem;
+}
+
+.timeline-list-compact .timeline-item {
+    grid-template-columns: 112px 1fr;
+    padding: 0.78rem 0.85rem;
 }
 
 .timeline-item {
@@ -429,6 +471,11 @@
 }
 
 @media (max-width: 720px) {
+    .snapshot-actions-popover {
+        right: auto;
+        left: 0;
+    }
+
     .timeline-item {
         grid-template-columns: 1fr;
     }

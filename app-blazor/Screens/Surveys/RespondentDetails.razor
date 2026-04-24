@@ -132,40 +132,11 @@ else
 
         <div class="card respondent-card">
             <div class="card-body">
-                <div class="card-title">External Actions</div>
-                <div class="action-list">
-                    <a class="action-link" href="@ElmaUrl" target="_blank" rel="noopener noreferrer">Open ELMA FO Update Request</a>
-                    <a class="action-link" href="@BuildBackUrl()">Open Survey Iteration Grid</a>
-                    <a class="action-link" href="@BuildSurveyDetailUrl()">Open Survey Detail</a>
+                <div class="timeline-card-header">
+                    <div class="card-title">Interaction Timeline</div>
+                    <div class="timeline-card-subtitle">Recent respondent touches tied to this survey record.</div>
                 </div>
-                <div class="external-note">
-                    Survey Review and ELMA API integrations remain blocked on external specifications, so this demo uses the approved static ELMA link pattern.
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card respondent-card">
-        <div class="detail-tabs" role="tablist" aria-label="Respondent detail tabs">
-            <button class="@GetTabClass("timeline")" type="button" @onclick="ShowTimelineTab">Interaction Timeline</button>
-            <button class="@GetTabClass("overview")" type="button" @onclick="ShowOverviewTab">Record Snapshot</button>
-        </div>
-        <div class="card-body">
-            @if (ActiveTab == "overview")
-            {
-                <div class="snapshot-grid">
-                    @foreach (var field in SnapshotFields)
-                    {
-                        <div class="snapshot-item">
-                            <div class="snapshot-key">@field.Key</div>
-                            <div class="snapshot-value">@field.Value</div>
-                        </div>
-                    }
-                </div>
-            }
-            else
-            {
-                <div class="timeline-list">
+                <div class="timeline-list timeline-list-compact">
                     @foreach (var item in Timeline)
                     {
                         <div class="timeline-item">
@@ -179,7 +150,32 @@ else
                         </div>
                     }
                 </div>
-            }
+            </div>
+        </div>
+    </div>
+
+    <div class="card respondent-card">
+        <div class="card-body">
+            <div class="snapshot-header">
+                <div class="card-title">Record Snapshot</div>
+                <details class="snapshot-actions-menu">
+                    <summary>External Actions</summary>
+                    <div class="snapshot-actions-popover">
+                        <a class="action-link" href="@ElmaUrl" target="_blank" rel="noopener noreferrer">Open ELMA FO Update Request</a>
+                        <a class="action-link" href="@BuildBackUrl()">Open Survey Iteration Grid</a>
+                        <a class="action-link" href="@BuildSurveyDetailUrl()">Open Survey Detail</a>
+                    </div>
+                </details>
+            </div>
+            <div class="snapshot-grid">
+                @foreach (var field in SnapshotFields)
+                {
+                    <div class="snapshot-item">
+                        <div class="snapshot-key">@field.Key</div>
+                        <div class="snapshot-value">@field.Value</div>
+                    </div>
+                }
+            </div>
         </div>
     </div>
 }
@@ -197,7 +193,6 @@ else
     private List<app_blazor.Services.RespondentTimelineEvent> Timeline { get; set; } = [];
     private BurdenSummary BurdenTotals { get; set; } = BurdenSummary.Empty;
     private double BurdenComputationMs { get; set; }
-    private string ActiveTab { get; set; } = "timeline";
     private const string ElmaUrl = "https://elma.nass.usda.gov/FO/FOUpdateRequest.aspx";
     private static readonly string[] ChartPalette = ["#5b8db7", "#f29d38", "#4ca978", "#8e6ccf", "#d95f5f"];
 
@@ -364,13 +359,6 @@ else
         var percent = (decimal)count / total * 100m;
         return $"{Math.Round(percent, 1)}%";
     }
-
-    private void SetTab(string tab) => ActiveTab = tab;
-    private void ShowTimelineTab() => SetTab("timeline");
-    private void ShowOverviewTab() => SetTab("overview");
-
-    private string GetTabClass(string tab)
-        => ActiveTab == tab ? "detail-tab is-active" : "detail-tab";
 
     private string BuildBackUrl()
     {
