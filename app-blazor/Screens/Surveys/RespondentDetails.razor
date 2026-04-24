@@ -1,0 +1,416 @@
+@page "/respondents/details"
+@inject NavigationManager Navigation
+@inject app_blazor.Services.SurveyInstanceService SurveyInstanceService
+@using System.Diagnostics
+
+<PageTitle>Respondent Details</PageTitle>
+
+<nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb breadcrumb-mini mb-0">
+        <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/surveys">Surveys</a></li>
+        <li class="breadcrumb-item"><a href="/surveys/results">Results</a></li>
+        <li class="breadcrumb-item"><a href="@BuildBackUrl()">Survey Record</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Respondent Details</li>
+    </ol>
+</nav>
+
+@if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <div class="alert alert-warning">@ErrorMessage</div>
+}
+else if (Respondent is null)
+{
+    <div class="alert alert-warning">Respondent details were not found for the selected POID.</div>
+}
+else
+{
+    <section class="respondent-hero">
+        <div>
+            <h1 class="respondent-title">Respondent @Poid</h1>
+            <div class="respondent-subtitle">@Respondent.Values.GetValueOrDefault("whole_name", "Survey contact")</div>
+        </div>
+        <div class="respondent-meta">
+            <span><strong>State:</strong> @StateId</span>
+            <span><strong>Survey ID:</strong> @SurveyId</span>
+            <span><strong>Sample ID:</strong> @SampleId</span>
+            <span><strong>Reference Date:</strong> @DisplayReferenceDate</span>
+        </div>
+    </section>
+
+    <div class="respondent-layout">
+        <div class="card respondent-card">
+            <div class="card-body">
+                <div class="burden-header">
+                    <div>
+                        <div class="card-title">Total Time Burden</div>
+                        <div class="burden-subtitle">Respondent information and burden history sourced from the record opened from the POID link.</div>
+                    </div>
+                    <div class="burden-total-panel">
+                        <div class="burden-total-minutes">@BurdenTotals.TotalMinutes min</div>
+                        <div class="burden-total-hours">@BurdenTotals.HoursDisplay</div>
+                    </div>
+                </div>
+
+                <div class="burden-overview-grid">
+                    <div class="burden-chart-card">
+                        <div class="count-chart-title">Respondent Information</div>
+                        <table class="details-table">
+                            <tbody>
+                                @foreach (var row in RespondentInfoRows)
+                                {
+                                    <tr>
+                                        <th>@row.Label</th>
+                                        <td>@row.Value</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="burden-chart-card">
+                        <div class="count-chart-title">Response History</div>
+                        <div class="burden-chart-subtitle">Collection mode distribution from the `hr_mode_*` burden windows.</div>
+                        <div class="count-chart-visual">
+                            <div class="response-pie response-pie-sm" style="background:@BuildCountPie(BurdenModeSlices);">
+                                <div class="response-pie-center response-pie-center-sm">
+                                    <div class="response-pie-label">Burden Total</div>
+                                    <div class="response-pie-value">@BurdenTotals.TotalMinutes</div>
+                                </div>
+                            </div>
+                            <div class="response-legend response-legend-wide">
+                                @foreach (var item in BurdenModeSlices)
+                                {
+                                    <div class="legend-item">
+                                        <span class="legend-swatch" style="background:@item.Color"></span>
+                                        <span class="legend-label">@item.Label</span>
+                                        <span class="legend-value">@($"{item.Count} min ({GetChartPercent(item.Count, BurdenModeSlices)})")</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="burden-history-lines">
+                            @foreach (var metric in BurdenMetrics)
+                            {
+                                <div>@metric.RangeShortLabel Burden: @metric.Surveys</div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-title burden-secondary-title">Historic Response Properties</div>
+                <table class="hr-table">
+                    <thead>
+                        <tr>
+                            <th>Window</th>
+                            <th>`hr_surveys_*`</th>
+                            <th>`hr_pct_*`</th>
+                            <th>`hr_mode_*`</th>
+                            <th>Minutes</th>
+                            <th>Hours</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var metric in BurdenMetrics)
+                        {
+                            <tr>
+                                <td>@metric.RangeLabel</td>
+                                <td>@metric.Surveys</td>
+                                <td>@metric.Percent%</td>
+                                <td>@metric.Mode</td>
+                                <td>@metric.EstimatedMinutes</td>
+                                <td>@metric.HoursDisplay</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="burden-note">
+                    Calculated in @($"{BurdenComputationMs:0.##}") ms using existing `hr_*` respondent fields plus interaction timeline estimates.
+                </div>
+            </div>
+        </div>
+
+        <div class="card respondent-card">
+            <div class="card-body">
+                <div class="timeline-card-header">
+                    <div class="card-title">Interaction Timeline</div>
+                    <div class="timeline-card-subtitle">Recent respondent touches tied to this survey record.</div>
+                </div>
+                <div class="timeline-list timeline-list-compact">
+                    @foreach (var item in Timeline)
+                    {
+                        <div class="timeline-item">
+                            <div class="timeline-date">@item.EventDate.ToString("MM/dd/yyyy")</div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">@item.EventType</div>
+                                <div class="timeline-actor">@item.Actor</div>
+                                <div class="timeline-summary">@item.Summary</div>
+                                <a class="timeline-link" href="@item.Link">Open linked iteration</a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card respondent-card">
+        <div class="card-body">
+            <div class="snapshot-header">
+                <div class="card-title">Record Snapshot</div>
+                <details class="snapshot-actions-menu">
+                    <summary>External Actions</summary>
+                    <div class="snapshot-actions-popover">
+                        <a class="action-link" href="@ElmaUrl" target="_blank" rel="noopener noreferrer">Open ELMA FO Update Request</a>
+                        <a class="action-link" href="@BuildBackUrl()">Open Survey Iteration Grid</a>
+                        <a class="action-link" href="@BuildSurveyDetailUrl()">Open Survey Detail</a>
+                    </div>
+                </details>
+            </div>
+            <div class="snapshot-grid">
+                @foreach (var field in SnapshotFields)
+                {
+                    <div class="snapshot-item">
+                        <div class="snapshot-key">@field.Key</div>
+                        <div class="snapshot-value">@field.Value</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "stateId")] public string? StateId { get; set; }
+    [SupplyParameterFromQuery(Name = "poid")] public string? Poid { get; set; }
+    [SupplyParameterFromQuery(Name = "surveyId")] public string? SurveyId { get; set; }
+    [SupplyParameterFromQuery(Name = "sampleId")] public string? SampleId { get; set; }
+    [SupplyParameterFromQuery(Name = "referenceDate")] public string? ReferenceDate { get; set; }
+
+    private string? ErrorMessage { get; set; }
+    private RespondentViewModel? Respondent { get; set; }
+    private List<BurdenMetric> BurdenMetrics { get; set; } = [];
+    private List<app_blazor.Services.RespondentTimelineEvent> Timeline { get; set; } = [];
+    private BurdenSummary BurdenTotals { get; set; } = BurdenSummary.Empty;
+    private double BurdenComputationMs { get; set; }
+    private const string ElmaUrl = "https://elma.nass.usda.gov/FO/FOUpdateRequest.aspx";
+    private static readonly string[] ChartPalette = ["#5b8db7", "#f29d38", "#4ca978", "#8e6ccf", "#d95f5f"];
+
+    private string DisplayReferenceDate =>
+        DateTime.TryParse(ReferenceDate, out var parsed) ? parsed.ToString("MM/dd/yyyy") : (ReferenceDate ?? string.Empty);
+
+    private IEnumerable<KeyValuePair<string, string>> SnapshotFields =>
+        Respondent is null
+            ? Enumerable.Empty<KeyValuePair<string, string>>()
+            : Respondent.Values
+                .Where(kv => kv.Key is "poid" or "target_poid" or "enumerator_id" or "manager_id" or "coach_id" or "response_code" or "dcms_code_id" or "op_dom_status_id" or "e_mail")
+                .OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase);
+
+    private List<InfoRow> RespondentInfoRows =>
+        Respondent is null
+            ? []
+            : new()
+            {
+                new("Person Name", Respondent.Values.GetValueOrDefault("whole_name", string.Empty)),
+                new("Operation Name", Respondent.Values.GetValueOrDefault("op_name", Respondent.Values.GetValueOrDefault("operation_name", string.Empty))),
+                new("Street Address", Respondent.Values.GetValueOrDefault("mail_addr_1", Respondent.Values.GetValueOrDefault("street_address", string.Empty))),
+                new("City", Respondent.Values.GetValueOrDefault("city_name", Respondent.Values.GetValueOrDefault("city", string.Empty))),
+                new("State", Respondent.Values.GetValueOrDefault("state_alpha", StateId ?? string.Empty)),
+                new("Email", Respondent.Values.GetValueOrDefault("e_mail", string.Empty)),
+                new("Phone", Respondent.Values.GetValueOrDefault("phone", Respondent.Values.GetValueOrDefault("phone_number", string.Empty)))
+            };
+
+    private List<CountSlice> BurdenModeSlices => BuildModeSlices(BurdenMetrics);
+
+    protected override void OnParametersSet()
+    {
+        ErrorMessage = null;
+        Respondent = null;
+        BurdenMetrics = [];
+        Timeline = [];
+
+        if (string.IsNullOrWhiteSpace(SurveyId) || string.IsNullOrWhiteSpace(SampleId) || string.IsNullOrWhiteSpace(ReferenceDate) || string.IsNullOrWhiteSpace(Poid))
+        {
+            ErrorMessage = "Missing respondent keys. Open this page from the survey record grid.";
+            return;
+        }
+
+        if (!int.TryParse(SurveyId, out var surveyIdValue) || !DateTime.TryParse(ReferenceDate, out var referenceDateValue))
+        {
+            ErrorMessage = "Invalid survey or reference date.";
+            return;
+        }
+
+        var record = SurveyInstanceService.GetRespondentByPoid(referenceDateValue, surveyIdValue, SampleId!, Poid!);
+        if (record is null)
+            return;
+
+        Respondent = new RespondentViewModel(record.Fields.ToDictionary(f => NormalizeKey(f.Field), f => f.Value, StringComparer.OrdinalIgnoreCase));
+        Timeline = SurveyInstanceService.GetRespondentTimeline(Poid!, surveyIdValue, SampleId!).ToList();
+        var stopwatch = Stopwatch.StartNew();
+        BurdenMetrics = BuildBurdenMetrics(Respondent.Values);
+        BurdenTotals = BuildBurdenSummary(BurdenMetrics, Timeline);
+        stopwatch.Stop();
+        BurdenComputationMs = stopwatch.Elapsed.TotalMilliseconds;
+    }
+
+    private static string NormalizeKey(string key)
+        => key.Trim().ToLowerInvariant().Replace(" ", "_").Replace("-", "_").Replace("(", "").Replace(")", "");
+
+    private static List<BurdenMetric> BuildBurdenMetrics(Dictionary<string, string> values)
+    {
+        var metrics = new List<BurdenMetric>();
+        foreach (var range in new[] { "1yr", "3yr", "5yr" })
+        {
+            var surveys = ParseInt(values.GetValueOrDefault($"hr_surveys_{range}"));
+            var mode = values.GetValueOrDefault($"hr_mode_{range}", "EDR");
+            var estimatedMinutes = surveys * GetModeMinutes(mode);
+            metrics.Add(new BurdenMetric(
+                range switch
+                {
+                    "1yr" => "Last 12 Months",
+                    "3yr" => "Last 3 Years",
+                    _ => "Last 5 Years"
+                },
+                surveys,
+                ParseInt(values.GetValueOrDefault($"hr_pct_{range}")),
+                mode,
+                estimatedMinutes));
+        }
+
+        return metrics;
+    }
+
+    private static BurdenSummary BuildBurdenSummary(
+        IReadOnlyList<BurdenMetric> metrics,
+        IReadOnlyList<app_blazor.Services.RespondentTimelineEvent> timeline)
+    {
+        var primaryWindow = metrics.FirstOrDefault(m => m.RangeLabel == "Last 12 Months") ?? metrics.FirstOrDefault() ?? new BurdenMetric("Last 12 Months", 0, 0, "EDR", 0);
+        var completionMinutes = primaryWindow.EstimatedMinutes;
+        var followUpCallMinutes = timeline.Count(item => item.EventType.Equals("Call Attempt", StringComparison.OrdinalIgnoreCase)) * 8;
+        var mailResponseMinutes = timeline.Count(item => item.EventType.Equals("Mail Sent", StringComparison.OrdinalIgnoreCase)) * 12;
+        var totalMinutes = completionMinutes + followUpCallMinutes + mailResponseMinutes;
+
+        return new BurdenSummary(
+            completionMinutes,
+            followUpCallMinutes,
+            mailResponseMinutes,
+            totalMinutes);
+    }
+
+    private static int GetModeMinutes(string mode)
+        => mode.ToUpperInvariant() switch
+        {
+            "EDR" => 18,
+            "CAPI" => 27,
+            "CATI" => 16,
+            "MAIL" => 12,
+            _ => 15
+        };
+
+    private static int ParseInt(string? value)
+        => int.TryParse(value, out var parsed) ? parsed : 0;
+
+    private static List<CountSlice> BuildModeSlices(IReadOnlyCollection<BurdenMetric> metrics)
+    {
+        var grouped = metrics
+            .Where(metric => metric.EstimatedMinutes > 0)
+            .GroupBy(metric => metric.Mode, StringComparer.OrdinalIgnoreCase)
+            .Select((group, index) => new CountSlice(
+                group.Key.ToUpperInvariant(),
+                group.Key.ToUpperInvariant(),
+                group.Sum(metric => metric.EstimatedMinutes),
+                ChartPalette[index % ChartPalette.Length]))
+            .ToList();
+
+        return grouped.Count == 0
+            ? [new CountSlice("No Burden", "No Burden", 1, "#d7dde3")]
+            : grouped;
+    }
+
+    private static int GetChartTotal(IReadOnlyCollection<CountSlice> slices)
+        => slices.Sum(s => s.Count);
+
+    private static string BuildCountPie(IReadOnlyCollection<CountSlice> slices)
+    {
+        var total = GetChartTotal(slices);
+        if (total <= 0)
+            return "conic-gradient(#d7dde3 0deg 360deg)";
+
+        var stops = new List<string>();
+        var current = 0d;
+        foreach (var slice in slices)
+        {
+            var span = 360d * slice.Count / total;
+            var next = current + span;
+            stops.Add($"{slice.Color} {current:0.##}deg {next:0.##}deg");
+            current = next;
+        }
+
+        return $"conic-gradient({string.Join(", ", stops)})";
+    }
+
+    private static string GetChartPercent(int count, IReadOnlyCollection<CountSlice> slices)
+    {
+        var total = GetChartTotal(slices);
+        if (total == 0)
+            return "0%";
+
+        var percent = (decimal)count / total * 100m;
+        return $"{Math.Round(percent, 1)}%";
+    }
+
+    private string BuildBackUrl()
+    {
+        if (string.IsNullOrWhiteSpace(SurveyId) || string.IsNullOrWhiteSpace(SampleId) || string.IsNullOrWhiteSpace(ReferenceDate))
+            return "/surveys/results";
+
+        return $"/surveys/record?surveyId={Uri.EscapeDataString(SurveyId)}&sampleId={Uri.EscapeDataString(SampleId)}&referenceDate={Uri.EscapeDataString(ReferenceDate)}";
+    }
+
+    private string BuildSurveyDetailUrl()
+    {
+        if (string.IsNullOrWhiteSpace(SurveyId) || string.IsNullOrWhiteSpace(SampleId) || string.IsNullOrWhiteSpace(ReferenceDate))
+            return "/surveys/results";
+
+        return $"/surveys/details?surveyId={Uri.EscapeDataString(SurveyId)}&sampleId={Uri.EscapeDataString(SampleId)}&referenceDate={Uri.EscapeDataString(ReferenceDate)}";
+    }
+
+    private sealed record RespondentViewModel(Dictionary<string, string> Values);
+    private sealed record BurdenMetric(string RangeLabel, int Surveys, int Percent, string Mode, int EstimatedMinutes)
+    {
+        public string HoursDisplay => FormatHours(EstimatedMinutes);
+        public string RangeShortLabel => RangeLabel switch
+        {
+            "Last 12 Months" => "1 Year",
+            "Last 3 Years" => "3 Year",
+            "Last 5 Years" => "5 Year",
+            _ => RangeLabel
+        };
+        public string Color => Mode.ToUpperInvariant() switch
+        {
+            "EDR" => "#5b8db7",
+            "CAPI" => "#4ca978",
+            "CATI" => "#f29d38",
+            "MAIL" => "#8e6ccf",
+            _ => "#5a9772"
+        };
+    }
+
+    private sealed record BurdenSummary(int CompletionMinutes, int FollowUpCallMinutes, int MailResponseMinutes, int TotalMinutes)
+    {
+        public static BurdenSummary Empty => new(0, 0, 0, 0);
+        public string HoursDisplay => FormatHours(TotalMinutes);
+        public string CompletionHoursDisplay => FormatHours(CompletionMinutes);
+        public string FollowUpHoursDisplay => FormatHours(FollowUpCallMinutes);
+        public string MailHoursDisplay => FormatHours(MailResponseMinutes);
+    }
+
+    private static string FormatHours(int minutes)
+        => minutes == 0
+            ? "0.0 hours"
+            : $"{minutes / 60d:0.0} hours";
+
+    private sealed record CountSlice(string Code, string Label, int Count, string Color);
+    private sealed record InfoRow(string Label, string Value);
+}

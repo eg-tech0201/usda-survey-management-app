@@ -109,6 +109,7 @@ public sealed class SurveyInstanceService
             resolved.ResponseHistoryRate,
             resolved.ResponseHistoryBreakdown.Select(b => new ResponseHistoryItem(b.Label, b.Count)).ToList(),
             surveyDesignerAssociations,
+            BuildCollectionMaterials(resolved),
             fullRecord
         );
     }
@@ -977,6 +978,15 @@ public sealed class SurveyInstanceService
         var xstateLink = $"XSL-{rand.Next(1000, 9999)}";
         var coordinationId = $"COORD-{rand.Next(1000, 9999)}";
         var censusVars = $"CVAR-{rand.Next(10, 99)}";
+        var availableModes = instance.Modes.Select(m => NormalizeCollectionMode(m.Mode)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        if (availableModes.Count == 0)
+            availableModes.Add(NormalizeCollectionMode(instance.Mode));
+        var hrMode1Year = availableModes[rand.Next(availableModes.Count)];
+        var hrMode3Year = availableModes[rand.Next(availableModes.Count)];
+        var hrMode5Year = availableModes[rand.Next(availableModes.Count)];
+        var hrPct1Year = Math.Max(25, Math.Min(100, instance.RespondentInstancesLast1Year * 28 + rand.Next(-8, 9)));
+        var hrPct3Year = Math.Max(25, Math.Min(100, instance.RespondentInstancesLast3Years * 18 + rand.Next(-6, 7)));
+        var hrPct5Year = Math.Max(25, Math.Min(100, instance.RespondentInstancesLast5Years * 12 + rand.Next(-5, 6)));
 
         return new List<DetailField>
         {
@@ -1058,7 +1068,16 @@ public sealed class SurveyInstanceService
             new("tier", tier),
             new("xstatelink (casi)", xstateLink),
             new("coordination_id (capi)", coordinationId),
-            new("Census variables", censusVars)
+            new("Census variables", censusVars),
+            new("hr_surveys_1yr", instance.RespondentInstancesLast1Year.ToString(CultureInfo.InvariantCulture)),
+            new("hr_pct_1yr", hrPct1Year.ToString(CultureInfo.InvariantCulture)),
+            new("hr_mode_1yr", hrMode1Year),
+            new("hr_surveys_3yr", instance.RespondentInstancesLast3Years.ToString(CultureInfo.InvariantCulture)),
+            new("hr_pct_3yr", hrPct3Year.ToString(CultureInfo.InvariantCulture)),
+            new("hr_mode_3yr", hrMode3Year),
+            new("hr_surveys_5yr", instance.RespondentInstancesLast5Years.ToString(CultureInfo.InvariantCulture)),
+            new("hr_pct_5yr", hrPct5Year.ToString(CultureInfo.InvariantCulture)),
+            new("hr_mode_5yr", hrMode5Year)
         };
     }
 
@@ -1132,6 +1151,131 @@ public sealed class SurveyInstanceService
         return items
             .DistinctBy(i => i.ItemCode)
             .OrderBy(i => i.ItemCode, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static List<CollectionMaterial> BuildCollectionMaterials(SurveyInstance instance)
+    {
+        var rand = CreateStableRandom(instance.SurveyId * 31, instance.SampleId, instance.ReferenceDate, variation: 53);
+        var availableModes = instance.Modes
+            .Select(m => NormalizeCollectionMode(m.Mode))
+            .Where(m => m is "EDR" or "CAPI" or "CATI" or "Mail")
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (availableModes.Count == 0)
+            availableModes.Add("Mail");
+
+        var materialTypes = new[]
+        {
+            "Presurvey Letter",
+            "Questionnaire",
+            "Pressure Seal",
+            "Follow-up Letter",
+            "Thank You Letter"
+        };
+
+        var materials = new List<CollectionMaterial>(availableModes.Count * materialTypes.Length);
+        foreach (var mode in availableModes)
+        {
+            foreach (var type in materialTypes)
+            {
+                var uploadDate = instance.ReferenceDate.AddDays(-rand.Next(2, 45));
+                var extension = type.Equals("Questionnaire", StringComparison.OrdinalIgnoreCase) ? "pdf" : "docx";
+                var fileSizeBytes = type switch
+                {
+                    "Questionnaire" => rand.NextInt64(1_400_000, 4_800_000),
+                    "Pressure Seal" => rand.NextInt64(160_000, 520_000),
+                    _ => rand.NextInt64(220_000, 1_100_000)
+                };
+
+                materials.Add(new CollectionMaterial(
+                    $"{instance.Title} {mode} {type}",
+                    type,
+                    mode,
+                    $"v{rand.Next(1, 5)}.{rand.Next(0, 10)}",
+                    uploadDate,
+                    fileSizeBytes,
+                    $"{Slugify(instance.Title)}-{mode.ToLowerInvariant()}-{Slugify(type)}.{extension}"));
+            }
+        }
+
+        return materials
+            .OrderByDescending(m => m.UploadDate)
+            .ThenBy(m => m.CollectionMode, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(m => m.MaterialType, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static string NormalizeCollectionMode(string mode)
+        => mode.ToUpperInvariant() switch
+        {
+            "CAWI" => "EDR",
+            "CASI" => "EDR",
+            "MAIL" => "Mail",
+            "CAPI" => "CAPI",
+            "CATI" => "CATI",
+            _ => mode
+        };
+
+    private static string Slugify(string value)
+        => string.Join("-",
+            value.Split(new[] { ' ', '/', '(', ')', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .ToLowerInvariant();
+
+    public SurveyRespondentRecord? GetRespondentByPoid(DateTime referenceDate, int surveyId, string sampleId, string poid)
+        => GetRespondentsForInstance(referenceDate, surveyId, sampleId, null, 30)
+            .FirstOrDefault(r =>
+                r.Fields.FirstOrDefault(f => f.Field.Equals("poid", StringComparison.OrdinalIgnoreCase))?.Value
+                    ?.Equals(poid, StringComparison.OrdinalIgnoreCase) == true);
+
+    public IReadOnlyList<RespondentTimelineEvent> GetRespondentTimeline(string poid, int surveyId, string sampleId)
+    {
+        if (string.IsNullOrWhiteSpace(poid))
+            return [];
+
+        var seed = StableHash($"{poid}|{surveyId}|{sampleId}|timeline");
+        var rand = new Random(seed);
+        var relatedInstances = _instances
+            .Where(i => i.SampleId.Equals(sampleId, StringComparison.OrdinalIgnoreCase) || i.SurveyId == surveyId)
+            .OrderByDescending(i => i.ReferenceDate)
+            .Take(8)
+            .ToList();
+
+        if (relatedInstances.Count == 0)
+            return [];
+
+        var events = new List<RespondentTimelineEvent>();
+        foreach (var instance in relatedInstances)
+        {
+            var eventDate = instance.ReferenceDate.AddDays(rand.Next(0, 18));
+            events.Add(new RespondentTimelineEvent(
+                eventDate,
+                "Survey Iteration",
+                "SMS",
+                $"{instance.Title} ({instance.SampleId}) iteration opened for respondent {poid}.",
+                $"/surveys/details?referenceDate={instance.ReferenceDate:yyyy-MM-dd}&surveyId={instance.SurveyId}&sampleId={Uri.EscapeDataString(instance.SampleId)}"));
+
+            events.Add(new RespondentTimelineEvent(
+                eventDate.AddDays(2),
+                instance.Mode.Equals("MAIL", StringComparison.OrdinalIgnoreCase) ? "Mail Sent" : "Call Attempt",
+                "Survey Ops",
+                $"Primary contact attempt recorded in {NormalizeCollectionMode(instance.Mode)} mode.",
+                $"/surveys/record?referenceDate={instance.ReferenceDate:yyyy-MM-dd}&surveyId={instance.SurveyId}&sampleId={Uri.EscapeDataString(instance.SampleId)}"));
+
+            if (rand.Next(0, 2) == 0)
+            {
+                events.Add(new RespondentTimelineEvent(
+                    eventDate.AddDays(4),
+                    "Response Received",
+                    "SMS",
+                    $"Disposition captured as {instance.ResponseCode}.",
+                    $"/respondents/details?poid={Uri.EscapeDataString(poid)}&surveyId={instance.SurveyId}&sampleId={Uri.EscapeDataString(instance.SampleId)}&referenceDate={instance.ReferenceDate:yyyy-MM-dd}&stateId={Uri.EscapeDataString(instance.StateId)}"));
+            }
+        }
+
+        return events
+            .OrderByDescending(e => e.EventDate)
             .ToList();
     }
 
@@ -1226,6 +1370,7 @@ public sealed record SurveyInstanceDetailResponse(
     decimal ResponseHistoryRate,
     List<ResponseHistoryItem> ResponseHistoryBreakdown,
     List<SurveyDesignerAssociation> SurveyDesignerAssociations,
+    List<CollectionMaterial> CollectionMaterials,
     List<DetailField> FullRecord
 );
 
@@ -1253,6 +1398,16 @@ public sealed record SurveyDesignerAssociation(
 public sealed record QuestionnaireSpecItem(
     string ItemCode,
     string Description
+);
+
+public sealed record CollectionMaterial(
+    string MaterialName,
+    string MaterialType,
+    string CollectionMode,
+    string Version,
+    DateTime UploadDate,
+    long FileSizeBytes,
+    string FileName
 );
 
 public sealed record SurveyRecordIndexItem(
@@ -1292,4 +1447,12 @@ public sealed record ResponseHistory(
     int Last5Years,
     decimal ResponseRate,
     List<ResponseHistoryItem> Breakdown
+);
+
+public sealed record RespondentTimelineEvent(
+    DateTime EventDate,
+    string EventType,
+    string Actor,
+    string Summary,
+    string Link
 );

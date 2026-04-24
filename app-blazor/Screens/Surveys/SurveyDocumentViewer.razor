@@ -1,0 +1,124 @@
+@page "/surveys/document-viewer"
+@inject IJSRuntime Js
+@inject NavigationManager Navigation
+@inject app_blazor.Services.DemoAuditTrailService AuditTrailService
+@inject app_blazor.Services.DemoUserContextService UserContext
+
+<PageTitle>@(string.IsNullOrWhiteSpace(Title) ? "Document Viewer" : Title)</PageTitle>
+
+<nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb breadcrumb-mini mb-0">
+        <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/surveys">Surveys</a></li>
+        <li class="breadcrumb-item"><a href="/surveys/results">Results</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Document Viewer</li>
+    </ol>
+</nav>
+
+@if (IsLoading)
+{
+    <div class="alert alert-info">Loading document...</div>
+}
+else
+{
+    <section class="viewer-shell">
+        <div class="viewer-header">
+            <div>
+                <h1 class="viewer-title">@DisplayTitle</h1>
+                <div class="viewer-subtitle">@DisplaySubtitle</div>
+            </div>
+            <details class="viewer-actions-menu">
+                <summary>External Actions</summary>
+                <div class="viewer-actions-popover">
+                    <button class="button-lite viewer-menu-action" type="button" @onclick="DownloadAsync">Download</button>
+                    @if (!string.IsNullOrWhiteSpace(Source))
+                    {
+                        <a class="button-lite button-link viewer-menu-action" href="@Source" target="_blank" rel="noopener noreferrer">Open Source Link</a>
+                    }
+                </div>
+            </details>
+        </div>
+
+        <div class="viewer-grid">
+            <div class="viewer-card">
+                <div class="viewer-label">Type</div>
+                <div class="viewer-value">@(MaterialType ?? "Questionnaire")</div>
+            </div>
+            <div class="viewer-card">
+                <div class="viewer-label">Collection Mode</div>
+                <div class="viewer-value">@(Mode ?? "EDR")</div>
+            </div>
+            <div class="viewer-card">
+                <div class="viewer-label">Version</div>
+                <div class="viewer-value">@(Version ?? "v1.0")</div>
+            </div>
+            <div class="viewer-card">
+                <div class="viewer-label">Format</div>
+                <div class="viewer-value">@(Format ?? "PDF")</div>
+            </div>
+        </div>
+
+        <div class="viewer-document">
+            <div class="viewer-document-header">
+                <span>Preview</span>
+                <span class="viewer-filename">@DisplayFileName</span>
+            </div>
+            <pre class="viewer-preview">@DocumentPreview</pre>
+        </div>
+    </section>
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "title")] public string? Title { get; set; }
+    [SupplyParameterFromQuery(Name = "mode")] public string? Mode { get; set; }
+    [SupplyParameterFromQuery(Name = "version")] public string? Version { get; set; }
+    [SupplyParameterFromQuery(Name = "format")] public string? Format { get; set; }
+    [SupplyParameterFromQuery(Name = "documentId")] public string? DocumentId { get; set; }
+    [SupplyParameterFromQuery(Name = "source")] public string? Source { get; set; }
+    [SupplyParameterFromQuery(Name = "fileName")] public string? FileName { get; set; }
+    [SupplyParameterFromQuery(Name = "materialType")] public string? MaterialType { get; set; }
+
+    private bool IsLoading { get; set; } = true;
+    private string DocumentPreview { get; set; } = string.Empty;
+
+    private string DisplayTitle => string.IsNullOrWhiteSpace(Title) ? "Survey Document" : Title;
+    private string DisplayFileName => string.IsNullOrWhiteSpace(FileName) ? $"{DisplayTitle.Replace(' ', '-')}.{(Format ?? "pdf").ToLowerInvariant()}" : FileName;
+    private string DisplaySubtitle => $"{MaterialType ?? "Questionnaire"} • {Mode ?? "EDR"} • {Version ?? "v1.0"}";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        IsLoading = true;
+        await Task.Delay(350);
+        DocumentPreview = BuildDocumentPreview();
+        IsLoading = false;
+    }
+
+    private string BuildDocumentPreview()
+        => string.Join(Environment.NewLine, new[]
+        {
+            "USDA Survey Management System",
+            "Demo Document Viewer",
+            string.Empty,
+            $"Title: {DisplayTitle}",
+            $"Type: {MaterialType ?? "Questionnaire"}",
+            $"Collection Mode: {Mode ?? "EDR"}",
+            $"Version: {Version ?? "v1.0"}",
+            $"Format: {Format ?? "PDF"}",
+            $"Document Id: {DocumentId ?? "N/A"}",
+            string.Empty,
+            "This preview simulates the Survey Review document viewer path described in the user stories.",
+            "The final implementation should replace this body with the real Survey Review payload or browser-native/PDF viewer integration."
+        });
+
+    private async Task DownloadAsync()
+    {
+        await Js.InvokeVoidAsync("smsDownloadText", DisplayFileName, DocumentPreview, "text/plain;charset=utf-8");
+        AuditTrailService.Log(
+            "Download",
+            MaterialType ?? "Questionnaire",
+            DocumentId ?? DisplayTitle,
+            DisplayFileName,
+            UserContext.CurrentRole,
+            "Downloaded from document viewer.");
+    }
+}
