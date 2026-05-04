@@ -130,6 +130,23 @@
         </div>
     </div>
 
+    <div class="search-results-toolbar">
+        <div class="pager">
+            <button class="button-lite" @onclick="PrevPage" disabled="@IsPrevDisabled">‹</button>
+            <span class="pager-text">@PageSummary</span>
+            <button class="button-lite" @onclick="NextPage" disabled="@IsNextDisabled">›</button>
+        </div>
+        <div class="pagesize">
+            <span class="pagesize-label">Rows:</span>
+            <select class="select-lite" @bind="PageSizeString" @bind:after="OnPageSizeChanged">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="All">All</option>
+            </select>
+        </div>
+    </div>
+
     <div class="search-summary">@SearchSummaryText</div>
 
     @if (!string.IsNullOrWhiteSpace(StatusMessage))
@@ -175,6 +192,7 @@
     [SupplyParameterFromQuery(Name = "poid")] public string? PoidQuery { get; set; }
     [SupplyParameterFromQuery(Name = "respondentId")] public string? RespondentIdQuery { get; set; }
     [SupplyParameterFromQuery(Name = "tracking")] public string? TrackingQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "size")] public string? SizeQuery { get; set; }
 
     private const string SavedSearchStorageKey = "sms.global-search.saved";
     private string SearchText { get; set; } = string.Empty;
@@ -194,6 +212,9 @@
     private List<SearchResultRow> VisibleResults { get; set; } = [];
     private double LastSearchElapsedMs { get; set; }
     private string? StatusMessage { get; set; }
+    private int PageIndex { get; set; }
+    private int PageSize { get; set; } = 10;
+    private string PageSizeString { get; set; } = "10";
 
     private int ActiveCriteriaCount =>
         CountActiveCriteria(SearchText, RecordTypeFilter, StatusFilter, SurveyTypeFilter, GeographicAreaFilter, PoidFilter, RespondentIdFilter, TrackingFilter)
@@ -203,12 +224,48 @@
     private List<ResultGroup> GroupedResults =>
         new()
         {
-            new ResultGroup("SMS Survey", VisibleResults.Where(r => r.RecordType == "SMS Survey").ToList()),
-            new ResultGroup("SMS Respondent", VisibleResults.Where(r => r.RecordType == "SMS Respondent").ToList())
+            new ResultGroup("SMS Survey", PagedResults.Where(r => r.RecordType == "SMS Survey").ToList()),
+            new ResultGroup("SMS Respondent", PagedResults.Where(r => r.RecordType == "SMS Respondent").ToList())
         };
 
     private string SearchSummaryText =>
         $"{VisibleResults.Count} result(s) across SMS surveys and respondents. {ActiveCriteriaCount} active criteria. Demo runtime: {LastSearchElapsedMs:0.##} ms.";
+
+    private List<SearchResultRow> PagedResults
+    {
+        get
+        {
+            if (PageSize <= 0 || VisibleResults.Count == 0)
+                return VisibleResults;
+
+            var maxPage = Math.Max(0, (int)Math.Ceiling(VisibleResults.Count / (double)PageSize) - 1);
+            if (PageIndex > maxPage)
+                PageIndex = maxPage;
+
+            return VisibleResults.Skip(PageIndex * PageSize).Take(PageSize).ToList();
+        }
+    }
+
+    private string PageSummary
+    {
+        get
+        {
+            var total = VisibleResults.Count;
+            if (total == 0)
+                return "0 results";
+
+            if (PageSize <= 0)
+                return $"1-{total} of {total} • Page 1 of 1";
+
+            var start = PageIndex * PageSize + 1;
+            var end = Math.Min(total, (PageIndex + 1) * PageSize);
+            var totalPages = Math.Max(1, (int)Math.Ceiling(total / (double)PageSize));
+            return $"{start}-{end} of {total} • Page {PageIndex + 1} of {totalPages}";
+        }
+    }
+
+    private bool IsPrevDisabled => PageIndex <= 0 || PageSize <= 0;
+    private bool IsNextDisabled => PageSize <= 0 || (PageIndex + 1) * PageSize >= VisibleResults.Count;
 
     private List<FilterChipModel> ActiveFilterChips => BuildActiveFilterChips();
 
@@ -228,6 +285,7 @@
         PoidFilter = PoidQuery ?? string.Empty;
         RespondentIdFilter = RespondentIdQuery ?? string.Empty;
         TrackingFilter = TrackingQuery ?? string.Empty;
+        ApplyPageSizeQuery();
         ShowAdvanced = HasAdvancedFilters();
         SavedSearches = await LoadSavedSearchesAsync();
         RefreshResults();
@@ -256,6 +314,8 @@
             query.Add($"respondentId={Uri.EscapeDataString(RespondentIdFilter.Trim())}");
         if (!string.IsNullOrWhiteSpace(TrackingFilter))
             query.Add($"tracking={Uri.EscapeDataString(TrackingFilter.Trim())}");
+        if (!string.IsNullOrWhiteSpace(PageSizeString) && !PageSizeString.Equals("10", StringComparison.OrdinalIgnoreCase))
+            query.Add($"size={Uri.EscapeDataString(PageSizeString)}");
 
         Navigation.NavigateTo($"/search{(query.Count == 0 ? string.Empty : $"?{string.Join("&", query)}")}");
     }
@@ -460,6 +520,7 @@
             .ThenByDescending(r => r.Relevance)
             .ThenByDescending(r => r.Date)
             .ToList();
+        PageIndex = 0;
         stopwatch.Stop();
         LastSearchElapsedMs = stopwatch.Elapsed.TotalMilliseconds;
         StatusMessage = ActiveCriteriaCount >= 2
@@ -512,6 +573,52 @@
     {
         if (!string.IsNullOrWhiteSpace(value))
             chips.Add(new FilterChipModel($"{label}: {value.Trim()}", RemoveAndSearch(remove)));
+    }
+
+    private void PrevPage()
+    {
+        if (PageIndex > 0)
+            PageIndex--;
+    }
+
+    private void NextPage()
+    {
+        if (!IsNextDisabled)
+            PageIndex++;
+    }
+
+    private void OnPageSizeChanged()
+    {
+        PageIndex = 0;
+        PageSizeString = PageSizeString?.Trim() ?? "10";
+        if (PageSizeString.Equals("All", StringComparison.OrdinalIgnoreCase))
+        {
+            PageSize = 0;
+            PageSizeString = "All";
+            return;
+        }
+
+        if (int.TryParse(PageSizeString, out var parsed) && parsed > 0)
+        {
+            PageSize = parsed;
+            return;
+        }
+
+        PageSize = 10;
+        PageSizeString = "10";
+    }
+
+    private void ApplyPageSizeQuery()
+    {
+        if (string.IsNullOrWhiteSpace(SizeQuery))
+        {
+            PageSize = 10;
+            PageSizeString = "10";
+            return;
+        }
+
+        PageSizeString = SizeQuery;
+        OnPageSizeChanged();
     }
 
     private sealed record SearchResultRow(

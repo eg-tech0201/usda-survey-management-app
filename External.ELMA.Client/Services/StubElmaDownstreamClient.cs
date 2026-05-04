@@ -54,18 +54,39 @@ public sealed class StubElmaDownstreamClient : IElmaDownstreamClient
             null));
     }
 
-    public Task<ElmaFoUpdateLinkResponse> GetFoUpdateRequestLinkAsync(CancellationToken cancellationToken)
+    public Task<ElmaFoUpdateLinkResponse> GetFoUpdateRequestLinkAsync(ElmaFoUpdateLinkRequest? request, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         var options = _options.CurrentValue;
-        var uri = new Uri(new Uri(options.BaseUrl), options.FoUpdateRequestPath);
+        var uriBuilder = new UriBuilder(new Uri(new Uri(options.BaseUrl), options.FoUpdateRequestPath));
+        var queryParts = string.IsNullOrWhiteSpace(uriBuilder.Query)
+            ? new List<string>()
+            : [uriBuilder.Query.TrimStart('?')];
+
+        AddQueryValue(queryParts, options.PoidQueryParameterName, request?.Poid);
+        AddQueryValue(queryParts, options.StateIdQueryParameterName, request?.StateId);
+        AddQueryValue(queryParts, options.FrameIdQueryParameterName, request?.FrameId);
+        AddQueryValue(queryParts, options.SourceSystemQueryParameterName, request?.SourceSystem ?? options.SourceSystem);
+        AddQueryValue(queryParts, options.CorrelationIdQueryParameterName, request?.CorrelationId);
+        uriBuilder.Query = string.Join("&", queryParts);
 
         return Task.FromResult(new ElmaFoUpdateLinkResponse(
-            uri,
-            options.SupportsFormPrefill ? "prefill" : "static-link",
-            options.SupportsFormPrefill
-                ? "ELMA prefill is enabled in configuration."
+            uriBuilder.Uri,
+            HasPrefillKeys(request) ? "static-prefill-link" : "static-link",
+            HasPrefillKeys(request)
+                ? "ELMA FO Update Request link includes respondent identifiers for form prefill."
                 : "Current approved behavior is the static ELMA FO Update Request link."));
     }
+
+    private static void AddQueryValue(List<string> queryParts, string key, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(key) && !string.IsNullOrWhiteSpace(value))
+            queryParts.Add($"{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value.Trim())}");
+    }
+
+    private static bool HasPrefillKeys(ElmaFoUpdateLinkRequest? request) =>
+        !string.IsNullOrWhiteSpace(request?.Poid) ||
+        !string.IsNullOrWhiteSpace(request?.StateId) ||
+        !string.IsNullOrWhiteSpace(request?.FrameId);
 }

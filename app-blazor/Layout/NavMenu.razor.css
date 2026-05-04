@@ -80,16 +80,6 @@
     margin-right: 0;
 }
 
-.role-pill {
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    background: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
-    border-radius: 999px;
-    padding: 0.42rem 0.8rem;
-    font-weight: 800;
-    line-height: 1;
-}
-
 .navbar-brand {
     font-size: 1.1rem;
     font-weight: 800;
@@ -296,6 +286,7 @@
 }
 
 .avatar {
+    border: 1px solid rgba(255, 255, 255, 0.25);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -304,6 +295,69 @@
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.12);
     color: #ffffff;
+    cursor: pointer;
+}
+
+.user-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    background: transparent;
+    z-index: 490;
+}
+
+.user-menu {
+    position: absolute;
+    right: 1.25rem;
+    top: 100%;
+    margin-top: 0.5rem;
+    width: 260px;
+    background: #ffffff;
+    border: 1px solid var(--brand-border);
+    border-radius: 12px;
+    box-shadow: 0 12px 24px rgba(11, 43, 75, 0.16);
+    z-index: 500;
+    padding: 0.55rem;
+}
+
+.user-menu-header {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.45rem 0.5rem 0.65rem;
+    border-bottom: 1px solid var(--brand-border);
+    color: var(--brand-navy);
+}
+
+.user-menu-header span {
+    font-weight: 700;
+    color: var(--brand-muted);
+}
+
+.user-menu-section-title {
+    padding: 0.6rem 0.5rem 0.25rem;
+    color: var(--brand-muted);
+    font-size: 0.78rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.user-menu-item {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--brand-navy);
+    border-radius: 10px;
+    padding: 0.5rem 0.55rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-weight: 800;
+    text-align: left;
+}
+
+.user-menu-item:hover,
+.user-menu-item.is-active {
+    background: rgba(31, 111, 63, 0.1);
 }
 
 .notif-dropdown {

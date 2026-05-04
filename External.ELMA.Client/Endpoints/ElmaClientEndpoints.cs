@@ -20,11 +20,19 @@ public static class ElmaClientEndpoints
             .WithSummary("Get ELMA client capabilities")
             .WithDescription("Returns the configured ELMA authentication mode, timeout, circuit breaker behavior, and current form-link support notes.");
 
-        group.MapGet("/fo-update-link", async (IElmaGateway gateway, CancellationToken cancellationToken) =>
-            Results.Ok(await gateway.GetFoUpdateRequestLinkAsync(cancellationToken)))
+        group.MapGet("/fo-update-link", async (
+            [FromQuery] string? poid,
+            [FromQuery] string? stateId,
+            [FromQuery] string? frameId,
+            [FromQuery] string? correlationId,
+            IElmaGateway gateway,
+            CancellationToken cancellationToken) =>
+            Results.Ok(await gateway.GetFoUpdateRequestLinkAsync(
+                new ElmaFoUpdateLinkRequest(poid, stateId, frameId, "SMS Lite", correlationId),
+                cancellationToken)))
             .WithName("GetElmaFoUpdateLink")
             .WithSummary("Get ELMA FO Update Request link")
-            .WithDescription("Returns the approved ELMA FO Update Request URL. Current spike outcome is a static link rather than direct form prefill.");
+            .WithDescription("Returns the approved ELMA FO Update Request URL with respondent identifiers appended for static form prefill.");
 
         group.MapPost("/transactions", SubmitTransactionAsync)
             .WithName("SubmitElmaTransaction")

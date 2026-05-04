@@ -640,8 +640,8 @@
     white-space: normal;
     word-break: break-word;
 
-    border-bottom: 2px solid rgba(11, 43, 75, 0.45);
-    border-right: 2px solid rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(11, 43, 75, 0.32);
+    border-right: 1px solid rgba(255, 255, 255, 0.55);
     /* vertical line */
     overflow: visible;
 }
@@ -701,11 +701,12 @@
     cursor: pointer;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     box-shadow: none !important;
-    border-radius: 0;
+    border-radius: 999px;
     outline: none !important;
-    width: 1rem;
-    height: 1rem;
+    width: 24px;
+    height: 24px;
 }
 
 .column-menu-trigger,
@@ -716,10 +717,14 @@
 }
 
 .funnel-icon {
-    width: 0.85rem !important;
-    height: 0.85rem !important;
+    width: 0.95rem !important;
+    height: 0.95rem !important;
     display: block;
     color: #ffffff;
+}
+
+.column-menu-trigger:hover {
+    background: rgba(255, 255, 255, 0.16) !important;
 }
 
 .column-menu-trigger:focus,
@@ -835,8 +840,8 @@
 /* Body cells with both vertical + horizontal lines */
 .table-surveys td {
     padding: 0.5rem 0.55rem;
-    border-bottom: 2px solid rgba(11, 43, 75, 0.28);
-    border-right: 2px solid rgba(11, 43, 75, 0.24);
+    border-bottom: 1px solid rgba(11, 43, 75, 0.12);
+    border-right: 1px solid rgba(11, 43, 75, 0.1);
     vertical-align: top;
     background: #fff;
     /* helps grid lines show cleanly */

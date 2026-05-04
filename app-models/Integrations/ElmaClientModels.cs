@@ -63,6 +63,14 @@ public sealed record ElmaFoUpdateLinkResponse(
     string UserMessage
 );
 
+public sealed record ElmaFoUpdateLinkRequest(
+    string? Poid,
+    string? StateId,
+    string? FrameId,
+    string? SourceSystem,
+    string? CorrelationId
+);
+
 public sealed record ElmaErrorResponse(
     string Code,
     string Message,

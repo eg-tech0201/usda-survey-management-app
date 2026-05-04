@@ -17,4 +17,9 @@ public sealed class ElmaClientOptions
     public int CircuitBreakerBreakSeconds { get; set; } = 30;
     public bool SupportsFormPrefill { get; set; }
     public string SourceSystem { get; set; } = "SCT";
+    public string PoidQueryParameterName { get; set; } = "poid";
+    public string StateIdQueryParameterName { get; set; } = "stateId";
+    public string FrameIdQueryParameterName { get; set; } = "frameId";
+    public string SourceSystemQueryParameterName { get; set; } = "sourceSystem";
+    public string CorrelationIdQueryParameterName { get; set; } = "correlationId";
 }

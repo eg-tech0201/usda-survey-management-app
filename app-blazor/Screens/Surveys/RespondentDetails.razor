@@ -1,5 +1,6 @@
 @page "/respondents/details"
 @inject NavigationManager Navigation
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @inject app_blazor.Services.SurveyInstanceService SurveyInstanceService
 @using System.Diagnostics
 
@@ -43,18 +44,30 @@ else
             <div class="card-body">
                 <div class="burden-header">
                     <div>
-                        <div class="card-title">Total Time Burden</div>
+                        <div class="card-title">Respondent Details</div>
                         <div class="burden-subtitle">Respondent information and burden history sourced from the record opened from the POID link.</div>
-                    </div>
-                    <div class="burden-total-panel">
-                        <div class="burden-total-minutes">@BurdenTotals.TotalMinutes min</div>
-                        <div class="burden-total-hours">@BurdenTotals.HoursDisplay</div>
                     </div>
                 </div>
 
                 <div class="burden-overview-grid">
                     <div class="burden-chart-card">
-                        <div class="count-chart-title">Respondent Information</div>
+                        <div class="respondent-info-header">
+                            <div class="count-chart-title">Respondent Information</div>
+                            <div class="snapshot-actions-row" aria-label="Respondent actions">
+                                <a class="tool-key" href="@BuildElmaUrl()" target="_blank" rel="noopener noreferrer">
+                                    <span class="bi bi-box-arrow-up-right" aria-hidden="true"></span>
+                                    <span>ELMA</span>
+                                </a>
+                                <a class="tool-key" href="@BuildBackUrl()">
+                                    <span class="bi bi-grid-3x3-gap" aria-hidden="true"></span>
+                                    <span>Iteration Grid</span>
+                                </a>
+                                <a class="tool-key" href="@BuildSurveyDetailUrl()">
+                                    <span class="bi bi-card-list" aria-hidden="true"></span>
+                                    <span>Survey Detail</span>
+                                </a>
+                            </div>
+                        </div>
                         <table class="details-table">
                             <tbody>
                                 @foreach (var row in RespondentInfoRows)
@@ -74,8 +87,10 @@ else
                         <div class="count-chart-visual">
                             <div class="response-pie response-pie-sm" style="background:@BuildCountPie(BurdenModeSlices);">
                                 <div class="response-pie-center response-pie-center-sm">
-                                    <div class="response-pie-label">Burden Total</div>
+                                    <div class="response-pie-label">Total Burden</div>
                                     <div class="response-pie-value">@BurdenTotals.TotalMinutes</div>
+                                    <div class="response-pie-unit">min</div>
+                                    <div class="response-pie-hours">@BurdenTotals.HoursDisplay</div>
                                 </div>
                             </div>
                             <div class="response-legend response-legend-wide">
@@ -153,31 +168,6 @@ else
             </div>
         </div>
     </div>
-
-    <div class="card respondent-card">
-        <div class="card-body">
-            <div class="snapshot-header">
-                <div class="card-title">Record Snapshot</div>
-                <details class="snapshot-actions-menu">
-                    <summary>External Actions</summary>
-                    <div class="snapshot-actions-popover">
-                        <a class="action-link" href="@ElmaUrl" target="_blank" rel="noopener noreferrer">Open ELMA FO Update Request</a>
-                        <a class="action-link" href="@BuildBackUrl()">Open Survey Iteration Grid</a>
-                        <a class="action-link" href="@BuildSurveyDetailUrl()">Open Survey Detail</a>
-                    </div>
-                </details>
-            </div>
-            <div class="snapshot-grid">
-                @foreach (var field in SnapshotFields)
-                {
-                    <div class="snapshot-item">
-                        <div class="snapshot-key">@field.Key</div>
-                        <div class="snapshot-value">@field.Value</div>
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
 }
 
 @code {
@@ -193,18 +183,11 @@ else
     private List<app_blazor.Services.RespondentTimelineEvent> Timeline { get; set; } = [];
     private BurdenSummary BurdenTotals { get; set; } = BurdenSummary.Empty;
     private double BurdenComputationMs { get; set; }
-    private const string ElmaUrl = "https://elma.nass.usda.gov/FO/FOUpdateRequest.aspx";
+    private const string DefaultElmaUrl = "https://elma.nass.usda.gov/FO/FOUpdateRequest.aspx";
     private static readonly string[] ChartPalette = ["#5b8db7", "#f29d38", "#4ca978", "#8e6ccf", "#d95f5f"];
 
     private string DisplayReferenceDate =>
         DateTime.TryParse(ReferenceDate, out var parsed) ? parsed.ToString("MM/dd/yyyy") : (ReferenceDate ?? string.Empty);
-
-    private IEnumerable<KeyValuePair<string, string>> SnapshotFields =>
-        Respondent is null
-            ? Enumerable.Empty<KeyValuePair<string, string>>()
-            : Respondent.Values
-                .Where(kv => kv.Key is "poid" or "target_poid" or "enumerator_id" or "manager_id" or "coach_id" or "response_code" or "dcms_code_id" or "op_dom_status_id" or "e_mail")
-                .OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase);
 
     private List<InfoRow> RespondentInfoRows =>
         Respondent is null
@@ -217,7 +200,16 @@ else
                 new("City", Respondent.Values.GetValueOrDefault("city_name", Respondent.Values.GetValueOrDefault("city", string.Empty))),
                 new("State", Respondent.Values.GetValueOrDefault("state_alpha", StateId ?? string.Empty)),
                 new("Email", Respondent.Values.GetValueOrDefault("e_mail", string.Empty)),
-                new("Phone", Respondent.Values.GetValueOrDefault("phone", Respondent.Values.GetValueOrDefault("phone_number", string.Empty)))
+                new("Phone", Respondent.Values.GetValueOrDefault("phone", Respondent.Values.GetValueOrDefault("phone_number", string.Empty))),
+                new("POID", Respondent.Values.GetValueOrDefault("poid", Poid ?? string.Empty)),
+                new("Target POID", Respondent.Values.GetValueOrDefault("target_poid", string.Empty)),
+                new("Frame ID", Respondent.Values.GetValueOrDefault("frame_id", string.Empty)),
+                new("Enumerator ID", Respondent.Values.GetValueOrDefault("enumerator_id", string.Empty)),
+                new("Manager ID", Respondent.Values.GetValueOrDefault("manager_id", string.Empty)),
+                new("Coach ID", Respondent.Values.GetValueOrDefault("coach_id", string.Empty)),
+                new("Response Code", Respondent.Values.GetValueOrDefault("response_code", string.Empty)),
+                new("DCMS Code ID", Respondent.Values.GetValueOrDefault("dcms_code_id", string.Empty)),
+                new("OpDom Status ID", Respondent.Values.GetValueOrDefault("op_dom_status_id", string.Empty))
             };
 
     private List<CountSlice> BurdenModeSlices => BuildModeSlices(BurdenMetrics);
@@ -374,6 +366,31 @@ else
             return "/surveys/results";
 
         return $"/surveys/details?surveyId={Uri.EscapeDataString(SurveyId)}&sampleId={Uri.EscapeDataString(SampleId)}&referenceDate={Uri.EscapeDataString(ReferenceDate)}";
+    }
+
+    private string BuildElmaUrl()
+    {
+        var configuredUrl = Configuration["Elma:FoUpdateRequestUrl"] ?? DefaultElmaUrl;
+        var uriBuilder = new UriBuilder(configuredUrl);
+        var queryParts = new List<string>();
+
+        AddElmaQuery(queryParts, "poid", Poid ?? Respondent?.Values.GetValueOrDefault("poid"));
+        AddElmaQuery(queryParts, "stateId", StateId ?? Respondent?.Values.GetValueOrDefault("state_id"));
+        AddElmaQuery(queryParts, "frameId", Respondent?.Values.GetValueOrDefault("frame_id"));
+        AddElmaQuery(queryParts, "sourceSystem", "SMS Lite");
+        AddElmaQuery(queryParts, "correlationId", BuildElmaCorrelationId());
+
+        uriBuilder.Query = string.Join("&", queryParts);
+        return uriBuilder.Uri.ToString();
+    }
+
+    private string BuildElmaCorrelationId()
+        => $"sms-lite-{SurveyId}-{SampleId}-{ReferenceDate}-{Poid}";
+
+    private static void AddElmaQuery(List<string> queryParts, string key, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+            queryParts.Add($"{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value.Trim())}");
     }
 
     private sealed record RespondentViewModel(Dictionary<string, string> Values);

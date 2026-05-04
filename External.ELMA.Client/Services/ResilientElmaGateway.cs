@@ -35,8 +35,8 @@ public sealed class ResilientElmaGateway : IElmaGateway
             "ELMA client shell supports static FO Update link now; direct form submission remains pending external ELMA specification."));
     }
 
-    public Task<ElmaFoUpdateLinkResponse> GetFoUpdateRequestLinkAsync(CancellationToken cancellationToken = default) =>
-        ExecuteAsync(ct => _downstreamClient.GetFoUpdateRequestLinkAsync(ct), cancellationToken);
+    public Task<ElmaFoUpdateLinkResponse> GetFoUpdateRequestLinkAsync(ElmaFoUpdateLinkRequest? request = null, CancellationToken cancellationToken = default) =>
+        ExecuteAsync(ct => _downstreamClient.GetFoUpdateRequestLinkAsync(request, ct), cancellationToken);
 
     public Task<ElmaTransactionStatusResponse> GetTransactionStatusAsync(string transactionId, CancellationToken cancellationToken = default) =>
         ExecuteAsync(ct => _downstreamClient.GetTransactionStatusAsync(transactionId, ct), cancellationToken);

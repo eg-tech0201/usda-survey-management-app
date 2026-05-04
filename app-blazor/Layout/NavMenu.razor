@@ -106,15 +106,14 @@
                     <span class="bi bi-search" aria-hidden="true"></span>
                 </button>
             </form>
-            <span class="role-pill">@UserContext.CurrentRole</span>
             <button type="button" class="icon-button" title="Notifications" @onclick="ToggleNotifs">
                 <span class="bi bi-bell" aria-hidden="true"></span>
                 <span class="badge">4</span>
             </button>
             <span class="email">user@usda.gov</span>
-            <span class="avatar" title="User">
+            <button type="button" class="avatar" title="User menu" @onclick="ToggleUserMenu">
                 <span class="bi bi-person-circle" aria-hidden="true"></span>
-            </span>
+            </button>
         </div>
     </div>
 </header>
@@ -132,11 +131,56 @@
     </div>
 }
 
+@if (ShowUserMenu)
+{
+    <div class="user-menu-backdrop" @onclick="CloseUserMenu"></div>
+    <div class="user-menu" @onclick:stopPropagation="true">
+        <div class="user-menu-header">
+            <span>user@usda.gov</span>
+            <strong>@UserContext.CurrentRole</strong>
+        </div>
+        <div class="user-menu-section-title">Role</div>
+        @foreach (var role in Roles)
+        {
+            <button type="button"
+                    class="user-menu-item @(UserContext.CurrentRole.Equals(role, StringComparison.OrdinalIgnoreCase) ? "is-active" : string.Empty)"
+                    @onclick="() => SelectRole(role)">
+                <span>@role</span>
+                @if (UserContext.CurrentRole.Equals(role, StringComparison.OrdinalIgnoreCase))
+                {
+                    <span class="bi bi-check2" aria-hidden="true"></span>
+                }
+            </button>
+        }
+    </div>
+}
+
 @code {
     private bool ShowNotifs;
+    private bool ShowUserMenu;
     private string GlobalSearchText { get; set; } = string.Empty;
+    private readonly string[] Roles =
+    [
+        "Survey Manager",
+        "SMS Administrator",
+        "Enumerator",
+        "Analyst"
+    ];
 
     private void ToggleNotifs() => ShowNotifs = !ShowNotifs;
+    private void ToggleUserMenu()
+    {
+        ShowUserMenu = !ShowUserMenu;
+        ShowNotifs = false;
+    }
+
+    private void CloseUserMenu() => ShowUserMenu = false;
+
+    private void SelectRole(string role)
+    {
+        UserContext.SetRole(role);
+        ShowUserMenu = false;
+    }
 
     private void SubmitGlobalSearch()
     {
